@@ -1,0 +1,282 @@
+% ==========================================================================
+% Project I Proposal skeleton -- 247-519-VA
+% LEGEND
+%   Plain text            = taken from YOUR existing work (check/edit it)
+%   \todo{...} (red bold) = work you still have to write; delete when done
+%   % comments            = hints about what the guide asks for
+% BEFORE PRINTING: delete every \todo, remove the red colour, print a
+% black-and-white test copy. Target: 2-3 pages (ceiling 3.0).
+% ==========================================================================
+\documentclass[10pt]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usepackage{float}
+\usetikzlibrary{positioning,arrows.meta}
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{8pt}{3pt}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{0.5em}{}
+\setlist{nosep,leftmargin=1.5em}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+
+\newcommand{\todo}[1]{{\color{red}\textbf{[TODO: #1]}}}
+
+\begin{document}
+
+%% ------------------------------------------------------------------ TITLE
+\begin{center}
+  {\Large\textbf{Interindividual Position Tracking and Subdividing}}\\[3pt]
+  Andrei Prodan (6317869) \quad Project I -- Proposal, Planning \& Prototyping (247-519-VA)\\
+  Vanier College
+\end{center}
+
+%% ------------------------------------------------------------------ 1
+\section{Problem and User Need}
+\textbf{Problem.} Groups with varied competency sets and predefined relationship structures have difficulty dividing themselves into subgroups that are capable of completing a task.
+
+\textbf{Needs.}
+\begin{description}[leftmargin=2.2em,labelwidth=2em,style=sameline]
+  \item[N1] (Participant) Be notified of relevant nearby people or needs without being overwhelmed by alerts.
+  \item[N2] (Participant) Keep control over whether to respond, and over what profile information is shared.
+  \item[N3] (Participant) Know what the group hierarchy is and who the leader is.
+  \item[N4] (Coordinator) Post a need at a location and be notified that the broadcasted need is acknowledged.
+  \item[N5] (Coordinator) See how groups are forming and where people are isolated or absent, without directing individuals.
+  \item[N6] (Coordinator) Receive information about the group size and assigned group leader for further communication.
+\end{description}
+
+\textbf{Objective.} From 10 participants with randomly assigned skillsets and acceptance rates, 1 subgroup with 1 leader is formed whose members together cover every skill of a randomly generated task drawn from a fixed skill list, in at least 90\% of trials where such a subgroup exists.
+
+%% ------------------------------------------------------------------ 2
+\section{Scope and System Context}
+
+\textbf{Scope in pairs.} Every in-scope item needs an out-of-scope neighbour.
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}X X@{}}
+\toprule
+\textbf{In scope} & \textbf{Out of scope (neighbor)}\\
+\midrule
+Configure the participant watches to communicate with the custom beacon hardware, which acts as the central controller for coordinating subgroup formation. & Automatic reclassification of watches when they encounter other classified groups is outside the scope of the project. Subgroup formation decisions will be initiated and coordinated by the central controller.\\
+Implement user profiles on the watches containing predefined participant criteria. & Modifying user profile information directly on the watch is outside the scope of the project.\\
+Implement filtering of incoming task requests using a predefined set of participant criteria. & Creating new filtering criteria or allowing users to define custom criteria is outside the scope of the project.\\
+Validate incoming task requests against the watch’s user profile criteria and obtain explicit user acceptance before sharing relevant profile information with the central controller. & Sharing profile information without explicit participant acceptance is outside the scope of the project.\\
+Develop a proof of concept demonstrating wireless communication between the custom beacon hardware and a compatible participant watch. & Printed circuit board (PCB) design and fabrication are outside the scope of Project I and belong to Project II.\\
+Develop and test a central procedure that selects a subgroup whose authorized participant skills cover the required task skills and assigns one leader. & Automatically changing participant profiles or subgroup membership in response to new nearby groups, without a new task request or central-controller decision, is outside the scope of the project.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Context diagram.}
+The system consists of the participant watches and the custom beacon hardware. The custom beacon hardware acts as the central controller and coordinates subgroup formation. Participants interact with the system through their watches, while the coordinator provides task requirements and receives information about formed groups.
+
+\begin{figure}[H]
+    \centering
+    \makebox[\textwidth][c]{%
+        \includegraphics[width=1.2\textwidth, keepaspectratio]{Gemini_Generated_Image_sabgyzsabgyzsabg.jpg}%
+    }
+    \caption{Interindividual Position Tracking and Subdividing — System Context}
+    \label{fig:system_context}
+\end{figure}
+
+\textbf{Stakeholder collision.} Participant and coordinator priorities can conflict. Participants want control over whether to respond to requests and what profile information they disclose (N2), while the coordinator needs enough information to identify suitable subgroups and monitor group formation (N5 and N6). The system must balance participant consent and privacy against the coordinator’s need to form effective subgroups and monitor progress.
+
+%% ------------------------------------------------------------------ 3
+\section{Platform and Custom Hardware}
+\textbf{Watch constraints.}
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}l X X l@{}}
+\toprule
+\textbf{ID} & \textbf{Limit (value + unit)} & \textbf{Source} & \textbf{Tag}\\
+\midrule
+C1 & Wireless: 2.4GHz Wi-Fi (802.11 b/g/n) and Bluetooth 5 (LE) & Waveshare wiki & constraint\\
+C2 & Battery: 400 mAh lithium battery at 3.7 V nominal & Spotspear User Guide & constraint\\
+C3 & Display: 2.06 in AMOLED, 410x502, capacitive touch & Waveshare wiki & constraint\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Custom hardware} (low-fidelity prototype: breadboard / modules / protoboard; not a PCB).\\
+Possible Modules/Parts:
+\begin{itemize}
+    \item ESP32-S3 development board.
+    \item E-paper display, if required for the prototype interface.
+    \item Rotary encoder and push buttons, if required for user input.
+    \item A suitable power supply.
+\end{itemize}
+Custom hardware responsibilities:\\The custom beacon hardware will act as the central controller for the system. The initial prototype will use off-the-shelf modules and a development board rather than a custom PCB.
+\begin{itemize}
+  \item Broadcast task-related requests to participant watches.
+  \item Receive relevant participant profile information only after explicit user acceptance.
+  \item Coordinate subgroup formation based on task requirements and the information participants authorize the system to share.
+  \item Assign a leader to each formed subgroup.
+  \item Provide the coordinator with the size, assigned leader, and status of each formed subgroup.
+\end{itemize}
+\textbf{Link to the watch.} The custom beacon hardware will communicate wirelessly with compatible participant watches using an interface supported by both devices. The specific interface will be selected after reviewing the hardware documentation and testing its suitability for the required 30 m communication range. The selected interface and its operating conditions will be documented before implementation.
+
+\textbf{Division of roles.} The participant watches store predefined user profiles, evaluate incoming requests for relevance, notify participants, and obtain explicit user acceptance before sharing relevant profile information. The custom beacon hardware coordinates subgroup formation and leader assignment. The coordinator supplies task requirements and receives information about the resulting groups.
+
+%% ------------------------------------------------------------------ 4
+\section{Provisional Requirements}
+\begin{center}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}p{1.25cm} p{1.5cm} X X X p{0.8cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Class} & \textbf{Statement (``shall'')} & \textbf{Rationale} & \textbf{Method: acceptance} & \textbf{Need}\\
+\midrule
+\textbf{REQ-SU-01} & Functional & The system shall broadcast task requests from the coordinator to participant watches for relevance filtering. & Participants need to be informed of relevant nearby needs without being overwhelmed by unnecessary alerts (N1), while coordinators need to communicate needs at specific locations (N4) without directly directing individuals (N5). & Demo: In 10 test attempts under defined operating conditions, the watch shall correctly receive and process at least 9 beacon requests. & N1, N4, N5\\
+\textbf{REQ-SU-02} &
+Performance &
+The system shall deliver at least 90\% of transmitted beacon messages to a compatible watch at a distance of 30\,m under defined test conditions. &
+A minimum delivery rate is required to ensure that beacon messages can reach participants at the intended communication range. &
+Test: Transmit a predefined number of beacon messages to a compatible watch at a distance of 30\,m. Acceptance: At least 90\% of the messages are received correctly. &
+N4 \\
+\textbf{REQ-SU-03} &
+Constraint &
+The custom beacon hardware shall support simultaneous communication with up to three compatible participant watches. &
+Limiting the number of simultaneously communicating devices constrains the communication system's complexity and is consistent with the project's limited prototype scope. &
+Test: Connect three compatible watches to the custom beacon hardware and exchange the intended messages with all three during the same test. Acceptance: All three watches communicate successfully with the custom beacon hardware during the test. &
+N1 \\
+\textbf{REQ-SU-04} & Interface & The custom hardware shall exchange task requests and participant responses with a compatible watch using the selected wireless interface. & The central controller needs to communicate with participant watches to coordinate subgroup formation. & Test: bidirectional message exchange between the custom hardware and a compatible watch. Acceptance: both a task request and a participant response are exchanged and correctly interpreted. & N1, N2, N4 \\
+\textbf{REQ-SU-05} &
+Buildability &
+The custom hardware shall allow its main electronic modules to be disconnected and reconnected without soldering or permanently modifying the modules. &
+Using removable connections simplifies prototype assembly, facilitates replacement of faulty modules, and supports iterative testing during development. &
+Inspection: Inspect the connections and disconnect and reconnect each main electronic module. Acceptance: Each module can be disconnected and reconnected without soldering or permanently modifying any component. &
+N4 \\
+\textbf{REQ-SU-06} &
+Functional &
+The watch shall require explicit user acceptance before sharing relevant profile information with the central controller. &
+Requiring user acceptance preserves participant control over the disclosure of personal profile information and prevents automatic sharing without consent. &
+Test: Send a beacon request that matches a participant's profile. Acceptance: Profile information is shared only after the participant explicitly accepts the request. &
+N2 \\
+\textbf{REQ-SU-07} &
+Functional &
+The system shall provide the coordinator with the number of participants and the identity of the assigned leader for each formed group. &
+Providing group size and leader information allows the coordinator to understand group composition and communicate with groups without directly managing individual participants. &
+Test: Form a group with a known number of participants and an assigned leader. Acceptance: The coordinator receives the correct participant count and assigned leader identity for that group. &
+N6 \\
+\textbf{REQ-SU-08} & Functional & The central controller shall select a subgroup whose authorized participant skills collectively cover all required skills of the task. & A subgroup must collectively possess the skills needed to complete the task. & Test: the selection procedure using predefined participant profiles and task requirements for which a valid subgroup exists. Acceptance: the selected subgroup covers every required skill. & N1, N5 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+All requirements above are \textbf{provisional}.
+
+%% ------------------------------------------------------------------ 5
+\section{Uncertainties and PoC Plan}
+\textbf{Register.}
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}l X X X@{}}
+\toprule
+\textbf{Field} & \textbf{R1} & \textbf{R2} & \textbf{R3}\\
+\midrule
+Statement &
+The custom beacon hardware may not deliver messages reliably to a compatible watch at 30\,m. &
+The custom beacon hardware may not determine proximity or location accurately enough to support relevant requests. &
+The watch may incorrectly filter requests received from the custom beacon hardware using participant profile criteria.\\
+
+Assumption &
+The selected wireless interface can deliver messages from the custom beacon hardware to the watch at the intended range under the test conditions. &
+The sensing or positioning method implemented in the custom beacon hardware can provide sufficiently useful information in the intended environment. &
+The watch can evaluate predefined criteria and correctly identify matching requests received from the custom beacon hardware.\\
+
+Consequence &
+Major &
+Major &
+Moderate\\
+
+Probability &
+Likely &
+Unlikely &
+Unlikely\\
+
+Evidence required &
+Measure the proportion of correctly received messages during a communication test at 30\,m. &
+Compare proximity or location estimates produced by the custom beacon hardware against known distances or locations under defined conditions. &
+Test the filtering logic with predefined participant profiles and requests, including matching and non-matching criteria.\\
+
+Mitigation &
+Test the wireless link early and revise the communication approach or narrow the supported operating conditions if necessary. &
+Test the proposed sensing method early and revise the method or narrow its supported conditions if necessary. &
+Test each filtering criterion independently before combining criteria into the complete filtering logic.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{PoC plan (for R1).}
+\begin{itemize}
+  \item \textbf{Narrowed question:}
+  Can the custom beacon deliver at least 90\% of its messages
+  correctly to the compatible watch at a distance of 30\,m?
+
+  \item \textbf{What is built:}
+  A low-fidelity prototype consisting of the beacon hardware
+  and one compatible watch configured to exchange test messages
+  over the selected wireless interface.
+
+  \item \textbf{What is measured:}
+  The number of messages transmitted and the number of unique,
+  correctly received messages at a distance of 30\,m.
+
+  \item \textbf{Test conditions:}
+  Conduct the test in an unobstructed outdoor environment.
+  Keep the devices at a measured distance of 30\,m and use
+  the same hardware configuration and message format throughout
+  the test.
+
+  \item \textbf{Pass criterion:}
+  At least 27 of 30 transmitted messages are received correctly
+  by the watch.
+
+  \item \textbf{Interpretation:}
+  Passing would provide preliminary evidence that the selected
+  wireless link can meet the proposed communication requirement
+  under the specified conditions. It would not establish
+  reliable communication in every environment.
+\end{itemize}
+
+%% ------------------------------------------------------------------ 6
+\section{Assumptions and Logbook}
+
+\textbf{Assumptions and dependencies}
+(each written so it could be false and checked):
+\begin{itemize}
+  \item The selected wireless interface can support communication
+  between the custom hardware and the watch at the intended
+  30\,m range under the defined test conditions.
+
+  \item The watch can evaluate predefined participant profile
+  criteria and determine whether an incoming beacon request
+  matches those criteria.
+
+  \item The required watch documentation, development tools,
+  and compatible off-the-shelf electronic modules will remain
+  available throughout the project.
+\end{itemize}
+
+\textbf{AI use.}
+AI tools were used to help develop the initial proposal
+structure based on the instructor's proposal guide and the
+project idea form. AI assistance was subsequently used to
+reword and clarify sections 1 and 2, particularly the problem
+statement, stakeholder needs, scope, and system context.
+AI assistance was also used to explore possible formulations
+for provisional requirements, uncertainties, and the PoC plan.
+AI-generated suggestions were reviewed against the instructor's
+guide and the project's intended scope. Proposed technical
+limits and acceptance criteria remain provisional and must
+be justified or verified through documentation and testing.
+
+\textbf{Logbook.}
+Since a formal logbook was not set up initially, this entry records my early brainstorming and scoping for the interindividual position-tracking and subgrouping project. I focused on defining the core problem, outlining in-scope features like participant tracking and task-based subgrouping while excluding advanced automation, and aligning my hardware plans around the course watch platform and breadboard prototyping. Future updates will be logged here in real time.
+
+\end{document}
