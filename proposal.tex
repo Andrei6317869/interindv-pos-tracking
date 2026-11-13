@@ -141,9 +141,9 @@ Test: Transmit a predefined number of beacon messages to a compatible watch at a
 N4 \\
 \textbf{REQ-SU-03} &
 Constraint &
-The custom beacon hardware shall support simultaneous communication with up to three compatible participant watches. &
-Limiting the number of simultaneously communicating devices constrains the communication system's complexity and is consistent with the project's limited prototype scope. &
-Test: Connect three compatible watches to the custom beacon hardware and exchange the intended messages with all three during the same test. Acceptance: All three watches communicate successfully with the custom beacon hardware during the test. &
+The custom beacon hardware shall support simultaneous communication with at least two compatible participant watches. &
+Ensuring support for a minimum of two simultaneously communicating devices allows multiple participants to interact with the custom beacon while maintaining the project's limited prototype scope. &
+Test: Connect two compatible watches to the custom beacon hardware and exchange the intended messages with both during the same test. Acceptance: Both watches communicate successfully with the custom beacon hardware during the test. &
 N1 \\
 \textbf{REQ-SU-04} & Interface & The custom hardware shall exchange task requests and participant responses with a compatible watch using the selected wireless interface. & The central controller needs to communicate with participant watches to coordinate subgroup formation. & Test: bidirectional message exchange between the custom hardware and a compatible watch. Acceptance: both a task request and a participant response are exchanged and correctly interpreted. & N1, N2, N4 \\
 \textbf{REQ-SU-05} &
