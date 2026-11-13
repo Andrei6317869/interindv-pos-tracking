@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon Network Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: arena on the left, live adjacency matrix and storage cost on the right; one column on phones. */
+:root {
+  --bg: #F4F6F8;
+  --panel: #FFFFFF;
+  --ink: #16212C;
+  --muted: #5B6B7A;
+  --line: #D9E0E6;
+  --accent: #C0392B;   /* beacon */
+  --link: #7F8C9A;
+  --h1: #1F6F8B;
+  --h2: #D98E04;
+  --h3: #7A5C8E;
+  --h4: #B5446E;
+  --off: #9AA5B1;
+  --cell1: #1F3A5F;
+  --cell0: #EEF1F4;
+  --arena: #F7F9FB;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F161D; --panel: #16202A; --ink: #E6EDF3; --muted: #93A3B3; --line: #263340;
+    --accent: #FF6B5A; --link: #6B7B8B; --h1: #4FB3D1; --h2: #F2B84B; --h3: #B79AD0; --h4: #F07FA6;
+    --off: #5F6E7C; --cell1: #8FB8E8; --cell0: #1B2733; --arena: #121B24;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F161D; --panel: #16202A; --ink: #E6EDF3; --muted: #93A3B3; --line: #263340;
+  --accent: #FF6B5A; --link: #6B7B8B; --h1: #4FB3D1; --h2: #F2B84B; --h3: #B79AD0; --h4: #F07FA6;
+  --off: #5F6E7C; --cell1: #8FB8E8; --cell0: #1B2733; --arena: #121B24;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); }
+body { font-family: var(--font-body); font-size: 15px; line-height: 1.5; -webkit-text-size-adjust: 100%; }
+
+.page { max-width: 1180px; margin: 0 auto; padding: 20px 16px 32px; }
+header { margin-bottom: 16px; }
+h1 { font-family: var(--font-mono); font-weight: 500; font-size: clamp(20px, 4.5vw, 26px); letter-spacing: -0.01em; margin: 0 0 6px; text-wrap: balance; }
+.sub { margin: 0; color: var(--muted); max-width: 68ch; }
+
+.app {
+  display: grid; gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "stage" "controls" "results";
+}
+@media (min-width: 900px) {
+  .app { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); grid-template-areas: "stage results" "controls results"; align-items: start; }
+}
+.stage { grid-area: stage; } .controls { grid-area: controls; } .results { grid-area: results; }
+
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.card h2 { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+
+canvas { display: block; width: 100%; aspect-ratio: 1; border-radius: 8px; }
+#net { background: var(--arena); touch-action: none; cursor: grab; max-height: 640px; }
+#net.dragging { cursor: grabbing; }
+#mat { max-width: 420px; margin: 0 auto; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 12px 2px 0; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--off); display: inline-block; }
+.dot.star { background: var(--accent); clip-path: polygon(50% 0, 62% 36%, 100% 38%, 70% 60%, 80% 100%, 50% 76%, 20% 100%, 30% 60%, 0 38%, 38% 36%); width: 14px; height: 14px; }
+.hint { margin: 8px 2px 0; font-size: 13px; color: var(--muted); }
+
+.controls .grid { display: grid; gap: 14px 20px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.field label { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; }
+.field output { font-family: var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; margin: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
+button {
+  font: inherit; font-weight: 500; color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 8px; padding: 9px 16px; min-height: 40px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.primary:hover { filter: brightness(1.06); }
+:focus-visible { outline: 2px solid var(--h1); outline-offset: 2px; }
+.check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; min-height: 40px; cursor: pointer; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.tile { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--bg); }
+.tile b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile small { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; margin-top: 3px; }
+.tile .dot { width: 8px; height: 8px; flex: none; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 10px 2px 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.meta b { color: var(--ink); font-weight: 500; font-family: var(--font-mono); }
+
+.bits-label { font-size: 12px; color: var(--muted); margin: 12px 2px 4px; }
+.bits { font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.12em; word-break: break-all; padding: 8px 10px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); }
+.bits i { font-style: normal; color: var(--accent); font-weight: 500; }
+
+.store { display: grid; gap: 10px; }
+.store .line { display: grid; grid-template-columns: 112px minmax(0, 1fr) 72px; align-items: center; gap: 10px; font-size: 13px; }
+.store .track { display: block; height: 10px; border-radius: 5px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+.store .fill { display: block; height: 100%; width: 0; background: var(--off); border-radius: 5px; transition: width .15s linear; }
+.store .line.best .fill { background: var(--h1); }
+.store .line.best .name { font-weight: 600; }
+.store .val { font-family: var(--font-mono); text-align: right; font-variant-numeric: tabular-nums; }
+.store .formula { color: var(--muted); font-size: 12px; margin: 2px 2px 0; }
+
+@media (max-width: 420px) {
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .store .line { grid-template-columns: 92px minmax(0, 1fr) 62px; }
+}
+@media (prefers-reduced-motion: reduce) { .store .fill { transition: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Beacon Network Simulator</h1>
+    <p class="sub">Agents wander at random around a beacon. Two nodes are linked when they are within radio range. The matrix is the adjacency matrix of that graph, updated live.</p>
+  </header>
+
+  <main class="app">
+    <section class="stage card" aria-label="Network arena">
+      <canvas id="net" role="img" aria-label="Network of wireless agents around a beacon"></canvas>
+      <div class="legend" id="legend">
+        <span><i class="dot star"></i>Beacon</span>
+        <span><i class="dot" style="background:var(--h1)"></i>1 hop</span>
+        <span><i class="dot" style="background:var(--h2)"></i>2 hops</span>
+        <span><i class="dot" style="background:var(--h3)"></i>3 hops</span>
+        <span><i class="dot" style="background:var(--h4)"></i>4+ hops</span>
+        <span><i class="dot" style="background:var(--off)"></i>No path</span>
+      </div>
+      <p class="hint">Drag any node, including the beacon, to move it. The dashed circle is the beacon's range <i>R</i>.</p>
+    </section>
+
+    <section class="controls card" aria-label="Controls">
+      <h2>Controls</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="n">Agents <output id="nOut">18</output></label>
+          <input id="n" type="range" min="3" max="40" step="1" value="18">
+        </div>
+        <div class="field">
+          <label for="r">Radio range R <output id="rOut">0.46</output></label>
+          <input id="r" type="range" min="0.15" max="0.8" step="0.01" value="0.46">
+        </div>
+        <div class="field">
+          <label for="s">Agent speed <output id="sOut">0.12</output></label>
+          <input id="s" type="range" min="0" max="0.4" step="0.01" value="0.12">
+        </div>
+      </div>
+      <div class="row">
+        <button id="play" class="primary" type="button" aria-pressed="false">Pause</button>
+        <button id="shuffle" type="button">Shuffle agents</button>
+        <label class="check"><input id="sort" type="checkbox">Sort matrix by hops</label>
+      </div>
+    </section>
+
+    <section class="results stack" aria-label="Results">
+      <div class="card">
+        <h2>Reach from the beacon</h2>
+        <div class="tiles">
+          <div class="tile"><b id="cDirect">0</b><small><i class="dot" style="background:var(--h1)"></i>Direct</small></div>
+          <div class="tile"><b id="cTwo">0</b><small><i class="dot" style="background:var(--h2)"></i>2 hops</small></div>
+          <div class="tile"><b id="cMore">0</b><small><i class="dot" style="background:var(--h3)"></i>3+ hops</small></div>
+          <div class="tile"><b id="cOff">0</b><small><i class="dot" style="background:var(--off)"></i>No path</small></div>
+        </div>
+        <div class="meta">
+          <span>Nodes n <b id="mN">0</b></span>
+          <span>Links E <b id="mE">0</b></span>
+          <span>Mean degree <b id="mK">0</b></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Adjacency matrix A</h2>
+        <canvas id="mat" role="img" aria-label="Adjacency matrix of the network"></canvas>
+        <div class="bits-label">Beacon row (who hears the beacon directly)</div>
+        <div class="bits" id="bits"></div>
+      </div>
+
+      <div class="card">
+        <h2>Storage needed (bits)</h2>
+        <div class="store" id="store">
+          <div class="line" data-k="dense"><span class="name">Full matrix</span><span class="track"><span class="fill"></span></span><span class="val">0</span></div>
+          <div class="line" data-k="tri"><span class="name">Upper half</span><span class="track"><span class="fill"></span></span><span class="val">0</span></div>
+          <div class="line" data-k="list"><span class="name">Neighbour list</span><span class="track"><span class="fill"></span></span><span class="val">0</span></div>
+        </div>
+        <p class="formula">Full: n&sup2; &nbsp; Half: n(n&minus;1)/2 &nbsp; List: 2E&middot;&lceil;log&#8322; n&rceil;. Lower is better. Try 40 agents with a small range: the list wins.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var net = $('net'), mat = $('mat');
+  var nctx = net.getContext('2d'), mctx = mat.getContext('2d');
+  var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var ARENA = 1;                 // arena radius in world units
+  var N = 18, R = 0.46, speed = 0.12;
+  var running = !reduced, sortHops = false;
+  var nodes = [];                // nodes[0] is the beacon
+  var adj = new Uint8Array(0), hops = [], E = 0, n = 0;
+  var drag = null, tAnim = 0;
+  var C = {};
+
+  function readColors() {
+    var cs = getComputedStyle(document.documentElement);
+    ['bg','panel','ink','muted','line','accent','link','h1','h2','h3','h4','off','cell1','cell0','arena'].forEach(function (k) {
+      C[k] = cs.getPropertyValue('--' + k).trim();
+    });
+  }
+  readColors();
+  new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  if (window.matchMedia) {
+    var mq = matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) mq.addEventListener('change', readColors);
+  }
+  setInterval(readColors, 3000);
+
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function spawn() {
+    var r = ARENA * 0.96 * Math.sqrt(Math.random()), t = rnd(0, 2 * Math.PI);
+    return { x: r * Math.cos(t), y: r * Math.sin(t), a: rnd(0, 2 * Math.PI) };
+  }
+  function setN(count) {
+    if (!nodes.length) nodes.push({ x: 0, y: 0, a: 0 });
+    while (nodes.length < count + 1) nodes.push(spawn());
+    nodes.length = count + 1;
+  }
+  setN(N);
+
+  function hopColor(h) {
+    if (h === 0) return C.accent;
+    if (h === 1) return C.h1;
+    if (h === 2) return C.h2;
+    if (h === 3) return C.h3;
+    if (h > 3) return C.h4;
+    return C.off;
+  }
+
+  function step(dt) {
+    for (var i = 1; i < nodes.length; i++) {
+      var p = nodes[i];
+      if (p === drag) continue;
+      p.a += (Math.random() - 0.5) * 14 * dt;
+      p.x += Math.cos(p.a) * speed * dt;
+      p.y += Math.sin(p.a) * speed * dt;
+      var d = Math.hypot(p.x, p.y);
+      if (d > ARENA) {
+        var nx = p.x / d, ny = p.y / d;
+        p.x = nx * ARENA; p.y = ny * ARENA;
+        var dot = Math.cos(p.a) * nx + Math.sin(p.a) * ny;
+        if (dot > 0) p.a = Math.atan2(Math.sin(p.a) - 2 * dot * ny, Math.cos(p.a) - 2 * dot * nx);
+      }
+    }
+  }
+
+  function build() {
+    n = nodes.length;
+    if (adj.length !== n * n) adj = new Uint8Array(n * n);
+    else adj.fill(0);
+    E = 0;
+    for (var i = 0; i < n; i++) {
+      for (var j = i + 1; j < n; j++) {
+        if (Math.hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y) <= R) {
+          adj[i * n + j] = 1; adj[j * n + i] = 1; E++;
+        }
+      }
+    }
+    hops = new Array(n).fill(-1);
+    hops[0] = 0;
+    var q = [0];
+    for (var h = 0; h < q.length; h++) {
+      var u = q[h];
+      for (var v = 0; v < n; v++) {
+        if (adj[u * n + v] && hops[v] < 0) { hops[v] = hops[u] + 1; q.push(v); }
+      }
+    }
+  }
+
+  function fit(canvas, ctx) {
+    var r = canvas.getBoundingClientRect();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { w: r.width, h: r.height };
+  }
+
+  function geom(size) {
+    var S = Math.min(size.w, size.h) / 2 * 0.95;
+    return { cx: size.w / 2, cy: size.h / 2, S: S, ar: Math.max(6, Math.min(13, S * 0.034)) };
+  }
+
+  function star(ctx, x, y, r) {
+    ctx.beginPath();
+    for (var k = 0; k < 10; k++) {
+      var rad = k % 2 === 0 ? r : r * 0.45, ang = -Math.PI / 2 + k * Math.PI / 5;
+      ctx.lineTo(x + rad * Math.cos(ang), y + rad * Math.sin(ang));
+    }
+    ctx.closePath();
+  }
+
+  function drawNet() {
+    var size = fit(net, nctx), g = geom(size), ctx = nctx;
+    ctx.clearRect(0, 0, size.w, size.h);
+
+    ctx.beginPath(); ctx.arc(g.cx, g.cy, g.S, 0, Math.PI * 2);
+    ctx.fillStyle = C.panel; ctx.fill();
+    ctx.lineWidth = 1; ctx.strokeStyle = C.line; ctx.stroke();
+
+    var b = nodes[0], bx = g.cx + b.x * g.S, by = g.cy + b.y * g.S, rr = R * g.S;
+    ctx.beginPath(); ctx.arc(bx, by, rr, 0, Math.PI * 2);
+    ctx.globalAlpha = 0.08; ctx.fillStyle = C.accent; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.setLineDash([6, 5]); ctx.lineWidth = 1.4; ctx.strokeStyle = C.accent; ctx.stroke(); ctx.setLineDash([]);
+    if (!reduced && running) {
+      var ph = (tAnim * 0.5) % 1;
+      ctx.beginPath(); ctx.arc(bx, by, rr * ph, 0, Math.PI * 2);
+      ctx.globalAlpha = (1 - ph) * 0.35; ctx.lineWidth = 1.5; ctx.strokeStyle = C.accent; ctx.stroke(); ctx.globalAlpha = 1;
+    }
+
+    var i, j, a, c;
+    for (i = 0; i < n; i++) {
+      for (j = i + 1; j < n; j++) {
+        if (!adj[i * n + j]) continue;
+        a = nodes[i]; c = nodes[j];
+        ctx.beginPath();
+        ctx.moveTo(g.cx + a.x * g.S, g.cy + a.y * g.S);
+        ctx.lineTo(g.cx + c.x * g.S, g.cy + c.y * g.S);
+        if (i === 0) { ctx.strokeStyle = C.accent; ctx.globalAlpha = 0.85; ctx.lineWidth = 2; }
+        else { ctx.strokeStyle = C.link; ctx.globalAlpha = 0.55; ctx.lineWidth = 1.2; }
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    var labels = n - 1 <= 24 && g.ar >= 8;
+    for (i = 1; i < n; i++) {
+      a = nodes[i];
+      var x = g.cx + a.x * g.S, y = g.cy + a.y * g.S;
+      ctx.beginPath(); ctx.arc(x, y, g.ar, 0, Math.PI * 2);
+      ctx.fillStyle = hopColor(hops[i]); ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = C.panel; ctx.stroke();
+      if (drag === a) { ctx.beginPath(); ctx.arc(x, y, g.ar + 4, 0, Math.PI * 2); ctx.lineWidth = 1.5; ctx.strokeStyle = C.ink; ctx.stroke(); }
+      if (labels) {
+        ctx.fillStyle = '#fff'; ctx.font = '600 ' + Math.round(g.ar * 0.95) + 'px ' + 'IBM Plex Sans, system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(i), x, y + 0.5);
+      }
+    }
+    star(ctx, bx, by, g.ar * 1.9);
+    ctx.fillStyle = C.accent; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = C.panel; ctx.stroke();
+    if (drag === nodes[0]) { ctx.beginPath(); ctx.arc(bx, by, g.ar * 2.3, 0, Math.PI * 2); ctx.lineWidth = 1.5; ctx.strokeStyle = C.ink; ctx.stroke(); }
+  }
+
+  function drawMat() {
+    var size = fit(mat, mctx), ctx = mctx, W = size.w;
+    ctx.clearRect(0, 0, W, W);
+    var order = [], i, j;
+    for (i = 0; i < n; i++) order.push(i);
+    if (sortHops) {
+      order.sort(function (p, q) {
+        var hp = hops[p] < 0 ? 99 : hops[p], hq = hops[q] < 0 ? 99 : hops[q];
+        return hp - hq || p - q;
+      });
+    }
+    var showLab = n <= 24, m = showLab ? 20 : 0, cell = (W - m) / n, gap = cell >= 6 ? 1 : 0;
+    ctx.fillStyle = C.cell0; ctx.fillRect(m, m, W - m, W - m);
+    for (i = 0; i < n; i++) {
+      for (j = 0; j < n; j++) {
+        var x = m + j * cell, y = m + i * cell, pi = order[i], pj = order[j];
+        if (pi === pj) { ctx.fillStyle = C.line; ctx.fillRect(x + gap * 0.5, y + gap * 0.5, cell - gap, cell - gap); continue; }
+        if (!adj[pi * n + pj]) continue;
+        ctx.fillStyle = (pi === 0 || pj === 0) ? C.accent : C.cell1;
+        ctx.fillRect(x + gap * 0.5, y + gap * 0.5, cell - gap, cell - gap);
+      }
+    }
+    if (showLab) {
+      ctx.font = '500 ' + Math.max(7, Math.min(11, Math.floor(cell * 0.72))) + 'px IBM Plex Mono, ui-monospace, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (i = 0; i < n; i++) {
+        var id = order[i];
+        ctx.fillStyle = hopColor(hops[id]);
+        var txt = id === 0 ? 'B' : String(id);
+        ctx.fillText(txt, m + i * cell + cell / 2, m / 2);
+        ctx.fillText(txt, m / 2, m + i * cell + cell / 2);
+      }
+    }
+  }
+
+  var lastUI = 0;
+  function updateUI(now) {
+    if (now - lastUI < 120) return;
+    lastUI = now;
+    var d = 0, t = 0, mo = 0, off = 0, i;
+    for (i = 1; i < n; i++) {
+      var h = hops[i];
+      if (h === 1) d++; else if (h === 2) t++; else if (h >= 3) mo++; else off++;
+    }
+    $('cDirect').textContent = d; $('cTwo').textContent = t; $('cMore').textContent = mo; $('cOff').textContent = off;
+    $('mN').textContent = n; $('mE').textContent = E; $('mK').textContent = (2 * E / n).toFixed(2);
+
+    var row = [];
+    for (i = 0; i < n; i++) row.push(i === 0 ? '<i>0</i>' : adj[i] ? '<i>1</i>' : '0');
+    $('bits').innerHTML = row.join(' ');
+
+    var vals = { dense: n * n, tri: n * (n - 1) / 2, list: 2 * E * Math.ceil(Math.log2(n)) };
+    var max = Math.max(vals.dense, vals.tri, vals.list, 1), best = 'dense';
+    ['dense', 'tri', 'list'].forEach(function (k) { if (vals[k] < vals[best]) best = k; });
+    ['dense', 'tri', 'list'].forEach(function (k) {
+      var line = document.querySelector('#store .line[data-k="' + k + '"]');
+      line.querySelector('.fill').style.width = (100 * vals[k] / max) + '%';
+      line.querySelector('.val').textContent = vals[k];
+      line.classList.toggle('best', k === best);
+    });
+    net.setAttribute('aria-label', 'Network of ' + (n - 1) + ' agents around a beacon. ' + d + ' hear the beacon directly, ' + t + ' are two hops away, ' + mo + ' are three or more hops away, ' + off + ' have no path.');
+  }
+
+  var last = performance.now();
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (running) { step(dt); tAnim += dt; }
+    build(); drawNet(); drawMat(); updateUI(now);
+    requestAnimationFrame(frame);
+  }
+
+  // Dragging
+  function pointerWorld(e) {
+    var r = net.getBoundingClientRect();
+    var size = { w: r.width, h: r.height }, g = geom(size);
+    return { px: e.clientX - r.left, py: e.clientY - r.top, g: g };
+  }
+  net.addEventListener('pointerdown', function (e) {
+    var p = pointerWorld(e), best = null, bd = 1e9;
+    for (var i = 0; i < nodes.length; i++) {
+      var d = Math.hypot(p.g.cx + nodes[i].x * p.g.S - p.px, p.g.cy + nodes[i].y * p.g.S - p.py);
+      if (d < bd) { bd = d; best = nodes[i]; }
+    }
+    if (best && bd <= Math.max(22, p.g.ar * 2.2)) {
+      drag = best; net.classList.add('dragging');
+      try { net.setPointerCapture(e.pointerId); } catch (err) {}
+      e.preventDefault();
+    }
+  });
+  net.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    var p = pointerWorld(e);
+    var x = (p.px - p.g.cx) / p.g.S, y = (p.py - p.g.cy) / p.g.S, d = Math.hypot(x, y);
+    if (d > ARENA) { x = x / d * ARENA; y = y / d * ARENA; }
+    drag.x = x; drag.y = y;
+  });
+  function endDrag() { drag = null; net.classList.remove('dragging'); }
+  net.addEventListener('pointerup', endDrag);
+  net.addEventListener('pointercancel', endDrag);
+
+  // Controls
+  $('n').addEventListener('input', function (e) { N = +e.target.value; $('nOut').textContent = N; setN(N); });
+  $('r').addEventListener('input', function (e) { R = +e.target.value; $('rOut').textContent = R.toFixed(2); });
+  $('s').addEventListener('input', function (e) { speed = +e.target.value; $('sOut').textContent = speed.toFixed(2); });
+  $('sort').addEventListener('change', function (e) { sortHops = e.target.checked; });
+  $('shuffle').addEventListener('click', function () { for (var i = 1; i < nodes.length; i++) nodes[i] = spawn(); });
+  function syncPlay() { $('play').textContent = running ? 'Pause' : 'Play'; $('play').setAttribute('aria-pressed', running ? 'false' : 'true'); }
+  $('play').addEventListener('click', function () { running = !running; syncPlay(); });
+  syncPlay();
+
+  requestAnimationFrame(function (t) { last = t; frame(t); });
+})();
+</script>
+</body>
+</html>
