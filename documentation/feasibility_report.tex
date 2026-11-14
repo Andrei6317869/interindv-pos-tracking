@@ -108,7 +108,7 @@ C1 & \req{04} & The watch can run ESP-NOW and BLE advertising together. & Measur
 C2 & \req{04}, \req{02} & A second device receives the watch's frames, and the reverse. & Measured & L-04 & BLE only: a PC found the advertisement and paired. ESP-NOW, reverse and range untested (Test 1b). & Partly supp.\\
 C3 & \req{02} & At least 27 of 30 messages arrive correctly at 30\,m. & Assumed & L-02 & Not tested. Settled by Test 2 (needs beacon). & Open\\
 C4 & \req{01}, \req{06} & Watch filtering and consent gate behave correctly. & Measured & L-07 & L-07: Test 6 24/24; Test 7 12/12 (4 accept, 3 reject, 3 timeout, 2 filtered), 4 profile sends, 6 blocked, 0 violations. Abstract skill model on the watch, tap input; radio send and beacon side not tested. & Partly supported\\
-C5 & \req{08} & Selection covers all task skills in $\ge 90\,\%$ of trials where a valid subgroup exists. & -- & -- & Test 10 (simulation) not yet run. & Open\\
+C5 & \req{08} & Selection covers all task skills in $\ge 90\,\%$ of trials where a valid subgroup exists. & Measured & L-08 & L-08: hand cases 8/8; 3$\times$1000 simulated trials, 100\,\% covered where a valid subgroup exists (1302 trials), 0 invalid picks, 0 false claims. Abstract skills, no radio; reachability is R1/R2. & Partly supported\\
 C6 & R2 & Position from 2D RSSI trilateration agrees with known positions. & Assumed & L-02 & Not tested; needs the three incoming boards (beacon plus two reference points). Tolerance: \pend{value, set before testing}. & Open\\
 C7 & \req{07} & The beacon's neighbour record and profile data fit in memory with both stacks active. & Calc.\ + measured & L-03, L-04 & Calc.: at most 26\,B. Measured: 173{,}372\,B heap free after both stacks. Not yet loaded on device. & Partly supp.\\
 \bottomrule
@@ -147,7 +147,7 @@ ID & Subject & Needs & Status & Reason and next check\\
 \req{05} & Removable modules & N4 & Open & Keep. Inspection once beacon is built.\\
 \req{06} & Explicit consent before sharing & N2 & Partly supported & Keep. Watch side supported (L-07, 0 violations in 12 runs); full check after beacon.\\
 \req{07} & Report group size and leader & N6 & Open & Keep. Test 11; memory sizing supports it (C7).\\
-\req{08} & Subgroup covers task skills & N1, N5 & Open & Keep. Test 10.\\
+\req{08} & Subgroup covers task skills & N1, N5 & Partly supported & Keep. Selection logic supported in simulation (L-08); reaching the chosen watches needs the boards.\\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -197,7 +197,7 @@ Mitigation & Test the link early; if it fails, record the delivery-versus-distan
 
 % ---------------------------------------------------------------- 6
 \section{Gate 1 Readiness}
-\emph{Draft, to be rewritten after the remaining tests.} The one measured result so far is that the watch runs ESP-NOW and BLE together (C1, L-04) with ample memory (C7). A PC also discovered and paired with the watch's BLE advertisement (C2, partly). No claim about range, delivery, proximity, filtering or selection is yet supported (C3--C6); they are open and each names its test. Boards for the beacon and a second node are in shipping (L-05). Provisional expected outcome: \textbf{proceed with conditions}, the condition being the 30\,m delivery test once the boards arrive. \pend{confirm outcome and arrival date}
+\emph{Draft, to be rewritten after the remaining tests.} The one measured result so far is that the watch runs ESP-NOW and BLE together (C1, L-04) with ample memory (C7). A PC also discovered and paired with the watch's BLE advertisement (C2, partly). Watch-side filtering, consent (C4, L-07) and subgroup selection logic (C5, L-08) are supported in simulation on the watch. No claim about range, delivery or proximity is yet supported (C3, C6); they are open and each names its test. Boards for the beacon and a second node are in shipping (L-05). Provisional expected outcome: \textbf{proceed with conditions}, the condition being the 30\,m delivery test once the boards arrive. \pend{confirm outcome and arrival date}
 
 % ================================================================ appendices
 \clearpage
@@ -214,6 +214,7 @@ L-04 & 2026-11-13 & Test 1a, below.\\
 L-05 & 2026-11-13 & Three ESP32 boards in shipping: the beacon and two further reference points, which give the three reference points 2D trilateration needs (L-02). Expected arrival \pend{date}. Tests 1b and 2--5 and the RSSI measurements are open until they arrive.\\
 L-06 & 2026-11-13 & Criteria and weights for Section~2 (coverage 0.35, uncertainty 0.25, buildability 0.25, cost 0.15), written before scoring; chosen by the assistant at the author's request, \pend{author confirms}.\\
 L-07 & 2026-11-13 & Tests 6 and 7 on the watch screen: 24/24 and 12/12, overall PASS, touch input.\\
+L-08 & 2026-11-13 & Test 10, subgroup selection on the watch: hand cases 8/8, 3$\times$1000 random trials, overall PASS.\\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -258,6 +259,9 @@ nRF24L01 (2.4\,GHz) & 30--100\,m & 10--30\,m & hurt by walls, concrete floors, 2
 
 \subsection*{L-07, 2026-11-13, planned: Tests 6 and 7, filtering and consent gate on the watch}
 \textbf{Objective.} Check that the watch filters requests correctly (\req{01}, R3) and shares profile data only after the participant accepts on the watch (\req{06}). \textbf{Code.} \texttt{code/test6\_7\_filter\_consent.ino}. \textbf{Model.} Eight abstract skills A--H as a bitmask; a request is relevant if the participant is available and shares at least one skill. \textbf{Test 6.} 24 hand-written cases (skill rule alone, availability alone, combined); pass: 24 of 24. \textbf{Test 7.} 12 runs (4 accept, 3 reject, 3 timeout, 2 non-matching) on the watch screen; pass: every run as expected, profile sent exactly once in each accept run and never otherwise, zero violations. \textbf{Limits.} The tap stands in for the final interface and the TX line for the radio send, so \req{06} is supported on the watch side only. \textbf{Input mode:} touch screen (touch controller found at 0x38). \textbf{Result, same day:} Test 6, 24 of 24 correct. Test 7, 12 of 12 runs as expected: runs 1--4 accepted, 5--7 rejected, 8--10 timed out, 11--12 filtered; profile sent 4 times (accept runs only), 6 requests blocked by the gate, 0 violations. Overall PASS, first attempt. Serial log: \texttt{logs/L-07\_test6\_7\_serial.txt}. The sketch first failed to compile (enum types used before definition by the IDE's auto-prototypes) and was fixed before this run. \textbf{Limits.} Abstract skills, tap in place of the final interface, TX line in place of the radio; the 12 runs are scripted, so this shows the logic is correct, not that people respond reliably.
+
+\subsection*{L-08, 2026-11-13: Test 10, subgroup selection covers the task skills}
+\textbf{Objective.} Check that a selection rule picks a subgroup covering every required skill whenever one exists, and says so honestly when none does (\req{08}, C5). \textbf{Code.} \texttt{code/test10\_selection.ino}. \textbf{Model.} Eight abstract skills A--H as a bitmask; rule under test: greedy cover (repeatedly pick the available participant adding the most missing required skills). A candidate rule, not fixed by the proposal. \textbf{Part A.} 8 hand-worked cases; pass 8 of 8. \textbf{Part B.} 3 batches of 1000 random trials (seeds 1--3; rosters of 2--10; each skill held with probability 1/4; 80\,\% available; task needs 2--4 skills), checked by two independent methods (coverage test, brute-force minimum subgroup). Pass, in every batch: $\ge 90\,\%$ of feasible trials covered, 0 invalid picks, 0 false ``covered'' claims, at least 100 feasible and 1 infeasible trial; subgroup size reported only. \textbf{Result.} Part A 8/8. Feasible trials 440, 418, 444 (infeasible 560, 582, 556): 100.0\,\% covered in each, 0 invalid picks, 0 false claims. Mean size greedy 1.83 against minimum 1.82; equal to the minimum in 99.4\,\% of covered trials, worst excess one participant (hand case 3 shows a non-minimal pick on purpose). Overall PASS, first run; run time 127\,ms. The watch's figures matched my host check exactly, as expected from fixed seeds. Result summary: \texttt{logs/L-08\_test10\_summary.txt}. \textbf{Limits.} This rule covers the task whenever a valid subgroup exists, so the 90\,\% threshold is met by construction; the informative results are the zero false claims and the size. Abstract skills, simulated rosters, no radio: reaching the chosen participants is R1 and R2.
 
 \textbf{AI use.} Test code and this document's scaffolding were produced with an AI assistant from the instructor's guide, the proposal and the instructor session; results are the author's measurements and must be checked against the logbook.
 
