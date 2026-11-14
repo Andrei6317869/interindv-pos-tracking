@@ -107,7 +107,7 @@ ID & Tests & Claim & Class & Source & Evidence & Status\\
 C1 & \req{04} & The watch can run ESP-NOW and BLE advertising together. & Measured & L-04 & Steps 1--8 pass; 31 of 31 send callbacks OK over 30\,s. & Supported\\
 C2 & \req{04}, \req{02} & A second device receives the watch's frames, and the reverse. & Measured & L-04 & BLE only: a PC found the advertisement and paired. ESP-NOW, reverse and range untested (Test 1b). & Partly supp.\\
 C3 & \req{02} & At least 27 of 30 messages arrive correctly at 30\,m. & Assumed & L-02 & Not tested. Settled by Test 2 (needs beacon). & Open\\
-C4 & \req{01}, \req{06} & Watch filtering and consent gate behave correctly. & -- & -- & Tests 6 and 7 next. Model: 8 skill bits; relevant if available and $\ge$1 skill shared. & Open\\
+C4 & \req{01}, \req{06} & Watch filtering and consent gate behave correctly. & Measured & L-07 & L-07: Test 6 24/24; Test 7 12/12 (4 accept, 3 reject, 3 timeout, 2 filtered), 4 profile sends, 6 blocked, 0 violations. Abstract skill model on the watch, tap input; radio send and beacon side not tested. & Partly supported\\
 C5 & \req{08} & Selection covers all task skills in $\ge 90\,\%$ of trials where a valid subgroup exists. & -- & -- & Test 10 (simulation) not yet run. & Open\\
 C6 & R2 & Position from 2D RSSI trilateration agrees with known positions. & Assumed & L-02 & Not tested; needs the three incoming boards (beacon plus two reference points). Tolerance: \pend{value, set before testing}. & Open\\
 C7 & \req{07} & The beacon's neighbour record and profile data fit in memory with both stacks active. & Calc.\ + measured & L-03, L-04 & Calc.: at most 26\,B. Measured: 173{,}372\,B heap free after both stacks. Not yet loaded on device. & Partly supp.\\
@@ -140,12 +140,12 @@ Baseline is provisional until tests are run. No requirement has been changed.
 \toprule
 ID & Subject & Needs & Status & Reason and next check\\
 \midrule
-\req{01} & Broadcast requests reach watches & N1, N4, N5 & Open & Keep. Tests 4 and 6.\\
+\req{01} & Broadcast requests reach watches & N1, N4, N5 & Open & Keep. Watch-side filtering supported (L-07); delivery needs Test 4.\\
 \req{02} & $\ge 90\,\%$ delivery at 30\,m & N4 & Open & Keep. Test 2 (27/30), needs beacon.\\
 \req{03} & Two watches at once & N1 & Open & Keep. Test 5, needs second device.\\
 \req{04} & Request/response exchange & N1, N2, N4 & Partly supported & Keep. Watch runs both stacks (C1); BLE advertisement found and paired by a PC (C2); exchange with the beacon untested.\\
 \req{05} & Removable modules & N4 & Open & Keep. Inspection once beacon is built.\\
-\req{06} & Explicit consent before sharing & N2 & Open & Keep. Test 7, watch side now, full after beacon.\\
+\req{06} & Explicit consent before sharing & N2 & Partly supported & Keep. Watch side supported (L-07, 0 violations in 12 runs); full check after beacon.\\
 \req{07} & Report group size and leader & N6 & Open & Keep. Test 11; memory sizing supports it (C7).\\
 \req{08} & Subgroup covers task skills & N1, N5 & Open & Keep. Test 10.\\
 \bottomrule
@@ -213,7 +213,7 @@ L-03 & 2026-11-13 & Session with instructor on storing connectivity between wire
 L-04 & 2026-11-13 & Test 1a, below.\\
 L-05 & 2026-11-13 & Three ESP32 boards in shipping: the beacon and two further reference points, which give the three reference points 2D trilateration needs (L-02). Expected arrival \pend{date}. Tests 1b and 2--5 and the RSSI measurements are open until they arrive.\\
 L-06 & 2026-11-13 & Criteria and weights for Section~2 (coverage 0.35, uncertainty 0.25, buildability 0.25, cost 0.15), written before scoring; chosen by the assistant at the author's request, \pend{author confirms}.\\
-L-07 & 2026-11-13 & Tests 6 and 7 on the watch screen; plan below, results to follow.\\
+L-07 & 2026-11-13 & Tests 6 and 7 on the watch screen: 24/24 and 12/12, overall PASS, touch input.\\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -257,7 +257,7 @@ nRF24L01 (2.4\,GHz) & 30--100\,m & 10--30\,m & hurt by walls, concrete floors, 2
 {\footnotesize\verbatiminput{logs/L-04_test1a_serial.txt}}
 
 \subsection*{L-07, 2026-11-13, planned: Tests 6 and 7, filtering and consent gate on the watch}
-\textbf{Objective.} Check that the watch filters requests correctly (\req{01}, R3) and shares profile data only after the participant accepts on the watch (\req{06}). \textbf{Code.} \texttt{code/test6\_7\_filter\_consent.ino}. \textbf{Model.} Eight abstract skills A--H as a bitmask; a request is relevant if the participant is available and shares at least one skill. \textbf{Test 6.} 24 hand-written cases (skill rule alone, availability alone, combined); pass: 24 of 24. \textbf{Test 7.} 12 runs (4 accept, 3 reject, 3 timeout, 2 non-matching) on the watch screen; pass: every run as expected, profile sent exactly once in each accept run and never otherwise, zero violations. \textbf{Limits.} The tap stands in for the final interface and the TX line for the radio send, so \req{06} is supported on the watch side only. \textbf{Input mode used and result:} \pend{fill in after the run}.
+\textbf{Objective.} Check that the watch filters requests correctly (\req{01}, R3) and shares profile data only after the participant accepts on the watch (\req{06}). \textbf{Code.} \texttt{code/test6\_7\_filter\_consent.ino}. \textbf{Model.} Eight abstract skills A--H as a bitmask; a request is relevant if the participant is available and shares at least one skill. \textbf{Test 6.} 24 hand-written cases (skill rule alone, availability alone, combined); pass: 24 of 24. \textbf{Test 7.} 12 runs (4 accept, 3 reject, 3 timeout, 2 non-matching) on the watch screen; pass: every run as expected, profile sent exactly once in each accept run and never otherwise, zero violations. \textbf{Limits.} The tap stands in for the final interface and the TX line for the radio send, so \req{06} is supported on the watch side only. \textbf{Input mode:} touch screen (touch controller found at 0x38). \textbf{Result, same day:} Test 6, 24 of 24 correct. Test 7, 12 of 12 runs as expected: runs 1--4 accepted, 5--7 rejected, 8--10 timed out, 11--12 filtered; profile sent 4 times (accept runs only), 6 requests blocked by the gate, 0 violations. Overall PASS, first attempt. Serial log: \texttt{logs/L-07\_test6\_7\_serial.txt}. The sketch first failed to compile (enum types used before definition by the IDE's auto-prototypes) and was fixed before this run. \textbf{Limits.} Abstract skills, tap in place of the final interface, TX line in place of the radio; the 12 runs are scripted, so this shows the logic is correct, not that people respond reliably.
 
 \textbf{AI use.} Test code and this document's scaffolding were produced with an AI assistant from the instructor's guide, the proposal and the instructor session; results are the author's measurements and must be checked against the logbook.
 
