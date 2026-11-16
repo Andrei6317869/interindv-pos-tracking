@@ -39,7 +39,7 @@
 {\Large\bfseries Interindividual Position Tracking and Subdividing}\\[2pt]
 {\large Stage 1 Concept and Feasibility Report}\\[2pt]
 Andrei Prodan (6317869) \quad|\quad Project I -- Proposal, Planning \& Prototyping (247-519-VA)\\
-Vanier College \quad|\quad Working draft of 13 November 2026 \quad|\quad \pend{final date at submission}
+Vanier College \quad|\quad Working draft of 16 November 2026 \quad|\quad Due 20 November 2026
 \end{center}
 
 % ---------------------------------------------------------------- 1
@@ -106,11 +106,11 @@ ID & Tests & Claim & Class & Source & Evidence & Status\\
 \midrule
 C1 & \req{04} & The watch can run ESP-NOW and BLE advertising together. & Measured & L-04 & Steps 1--8 pass; 31 of 31 send callbacks OK over 30\,s. & Supported\\
 C2 & \req{04}, \req{02} & A second device receives the watch's frames, and the reverse. & Measured & L-04, L-09 & BLE: a PC found the advertisement and paired. ESP-NOW, three boards at about 1--2\,m indoors: 1242 of 1350 pings answered (92.0\,\%) over 15 rounds, so frames arrive both ways. Range untested. & Supported\\
-C3 & \req{02} & At least 27 of 30 messages arrive correctly at 30\,m. & Assumed & L-02 & Not tested at 30\,m; no space for it at present. Warning from L-09: even at 1--2\,m indoors boards fell below 27 of 30 in 6 of 45 board-rounds, and the mean rate (92\,\%) sits near the 90\,\% line. & Open\\
+C3 & \req{02} & At least 27 of 30 messages arrive correctly at 30\,m. & Assumed & L-02 & Not tested at 30\,m; no space for it at present. Warning (L-09): at 1--2\,m indoors the mean rate (92\,\%) sat near the 90\,\% line. L-10, L-11: with BLE off on all three boards, 447 of 450 pings (99.3\,\%) were answered at 1--2\,m, against 92\,\% with BLE on, so BLE on the beacon costs about 5--7 points. & Open\\
 C4 & \req{01}, \req{06} & Watch filtering and consent gate behave correctly. & Measured & L-07 & L-07: Test 6 24/24; Test 7 12/12 (4 accept, 3 reject, 3 timeout, 2 filtered), 4 profile sends, 6 blocked, 0 violations. Abstract skill model on the watch, tap input; radio send and beacon side not tested. & Partly supported\\
 C5 & \req{08} & Selection covers all task skills in $\ge 90\,\%$ of trials where a valid subgroup exists. & Measured & L-08 & L-08: hand cases 8/8; 3$\times$1000 simulated trials, 100\,\% covered where a valid subgroup exists (1302 trials), 0 invalid picks, 0 false claims. Abstract skills, no radio; reachability is R1/R2. & Partly supported\\
 C6 & R2 & Position from 2D RSSI trilateration agrees with known positions. & Assumed & L-02 & Boards arrived (L-09); no position measured yet. Signal at the watch from R1 varied by 7\,dB over rounds 1--5. Tolerance, set 2026-11-15 before any data (L-09): mean position error $\le 25\,\%$ of the longest separation between reference points and smaller than the error of guessing the layout centre. & Open\\
-C7 & \req{07} & The beacon's neighbour record and profile data fit in memory with both stacks active. & Calc.\ + measured & L-03, L-04 & Calc.: at most 26\,B. Measured: 173{,}372\,B heap free after both stacks. Beacon board: 77{,}688\,B heap free with both stacks active (L-09). Not yet loaded on device. & Partly supp.\\
+C7 & \req{07} & The beacon's neighbour record and profile data fit in memory with both stacks active. & Calc.\ + measured & L-03, L-04 & Calc.: at most 26\,B. Measured: 173{,}372\,B heap free after both stacks. Beacon board: 77{,}688\,B heap free with both stacks active, 214{,}648\,B with BLE off (L-09, L-10). Not yet loaded on device. & Partly supp.\\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -197,7 +197,7 @@ Mitigation & Test the link early; if it fails, record the delivery-versus-distan
 
 % ---------------------------------------------------------------- 6
 \section{Gate 1 Readiness}
-\emph{Draft, to be rewritten after the remaining tests.} The one measured result so far is that the watch runs ESP-NOW and BLE together (C1, L-04) with ample memory (C7). A PC also discovered and paired with the watch's BLE advertisement (C2, partly). Watch-side filtering, consent (C4, L-07) and subgroup selection logic (C5, L-08) are supported in simulation on the watch. No claim about range, delivery or proximity is yet supported (C3, C6); they are open and each names its test. The three ESP32 boards arrived by 2026-11-15 (L-05, L-09) and exchange ESP-NOW frames with the watch (C2), but at 1--2\,m indoors round trips averaged 92.0\,\% over 15 rounds and the first two rounds missed the 27 of 30 criterion once (R1, 26). Provisional expected outcome: \textbf{proceed with conditions}, the condition being the 30\,m delivery test, for which space is not yet available. \pend{confirm outcome}
+\emph{Draft, to be rewritten after the remaining tests.} The one measured result so far is that the watch runs ESP-NOW and BLE together (C1, L-04) with ample memory (C7). A PC also discovered and paired with the watch's BLE advertisement (C2, partly). Watch-side filtering, consent (C4, L-07) and subgroup selection logic (C5, L-08) are supported in simulation on the watch. No claim about range, delivery or proximity is yet supported (C3, C6); they are open and each names its test. The three ESP32 boards arrived by 2026-11-15 (L-05, L-09) and exchange ESP-NOW frames with the watch (C2), but at 1--2\,m indoors round trips averaged 92.0\,\% over 15 rounds and the first two rounds missed the 27 of 30 criterion once (R1, 26). L-10 and L-11 identify BLE advertising on the boards as the main cause: with it off on all three boards, 447 of 450 pings (99.3\,\%) were answered and the criterion held in every board-round. This favours ESP-NOW alone on the beacon, as the proposal's single selected wireless interface allows. Provisional expected outcome: \textbf{proceed with conditions}, the condition being the 30\,m delivery test, for which space is not yet available. \pend{confirm outcome}
 
 % ================================================================ appendices
 \clearpage
@@ -216,6 +216,8 @@ L-06 & 2026-11-13 & Criteria and weights for Section~2 (coverage 0.35, uncertain
 L-07 & 2026-11-13 & Tests 6 and 7 on the watch screen: 24/24 and 12/12, overall PASS, touch input.\\
 L-08 & 2026-11-13 & Test 10, subgroup selection on the watch: hand cases 8/8, 3$\times$1000 random trials, overall PASS.\\
 L-09 & 2026-11-15 & Boards arrive; Test 1b, ESP-NOW link watch$\leftrightarrow$B0, R1, R2: 1242 of 1350 round trips (92.0\,\%) over 15 rounds; criterion missed once in the first two rounds (R1, 26), met in 39 of 45 board-rounds overall.\\
+L-10 & 2026-11-16 & BLE advertising switched off on R1 only: R1 97.3\,\% against 94.0\,\% (B0) and 91.0\,\% (R2) with BLE on, in the same session and with positions swapped; BLE on the boards probably costs 5--7 points of delivery.\\
+L-11 & 2026-11-16 & Test 1b repeated with BLE off on all three boards, 1--2\,m: 447 of 450 round trips (99.3\,\%), every board in every round 29 or 30; pass line RT $\ge 27$ met in 15 of 15 board-rounds. BLE advertising was the main cause of the L-09 loss.\\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -265,7 +267,7 @@ nRF24L01 (2.4\,GHz) & 30--100\,m & 10--30\,m & hurt by walls, concrete floors, 2
 \textbf{Objective.} Check that a selection rule picks a subgroup covering every required skill whenever one exists, and says so honestly when none does (\req{08}, C5). \textbf{Code.} \texttt{code/test10\_selection.ino}. \textbf{Model.} Eight abstract skills A--H as a bitmask; rule under test: greedy cover (repeatedly pick the available participant adding the most missing required skills). A candidate rule, not fixed by the proposal. \textbf{Part A.} 8 hand-worked cases; pass 8 of 8. \textbf{Part B.} 3 batches of 1000 random trials (seeds 1--3; rosters of 2--10; each skill held with probability 1/4; 80\,\% available; task needs 2--4 skills), checked by two independent methods (coverage test, brute-force minimum subgroup). Pass, in every batch: $\ge 90\,\%$ of feasible trials covered, 0 invalid picks, 0 false ``covered'' claims, at least 100 feasible and 1 infeasible trial; subgroup size reported only. \textbf{Result.} Part A 8/8. Feasible trials 440, 418, 444 (infeasible 560, 582, 556): 100.0\,\% covered in each, 0 invalid picks, 0 false claims. Mean size greedy 1.83 against minimum 1.82; equal to the minimum in 99.4\,\% of covered trials, worst excess one participant (hand case 3 shows a non-minimal pick on purpose). Overall PASS, first run; run time 127\,ms. The watch's figures matched my host check exactly, as expected from fixed seeds. Result summary: \texttt{logs/L-08\_test10\_summary.txt}. \textbf{Limits.} This rule covers the task whenever a valid subgroup exists, so the 90\,\% threshold is met by construction; the informative results are the zero false claims and the size. Abstract skills, simulated rosters, no radio: reaching the chosen participants is R1 and R2.
 
 \subsection*{L-09, 2026-11-15: boards arrive; Test 1b, ESP-NOW link between the watch and the three boards}
-\textbf{Objective.} Check that the three boards start both radio stacks and exchange ESP-NOW frames with the watch (C2, \req{04}). \textbf{Hardware.} Three ELEGOO ESP32 boards (ESP32-D0WD-V3 rev 3.1, dual core, 240\,MHz), labelled B0 (beacon, MAC 68:09:47:5F:C6:F4), R1 (68:09:47:5F:BE:38) and R2 (68:09:47:5F:A7:AC). \textbf{Code.} \texttt{code/node\_link\_board.ino} on the boards, \texttt{code/node\_link\_watch.ino} on the watch. \textbf{Method.} The watch sends 30 numbered ESP-NOW pings, 100\,ms apart; each board answers every ping it hears with a reply carrying its count of pings heard and the signal strength (RSSI) it measured. The watch counts replies (RT, of 30). Indoors, one watch on a desk edge, boards on a bed; distances \pend{measure in metres}. \textbf{Pass (set before running).} All six start-up steps pass on each board, and $\mathrm{RT}\ge 27$ of 30 for each board in both of the first two rounds. \textbf{Board start-up.} 6 of 6 steps PASS on B0, R1 and R2 (Wi-Fi station mode, ESP-NOW init, callbacks, broadcast peer, BLE init, BLE advertising); heap free 215{,}712\,B at boot and 77{,}688\,B after both stacks. R1's first upload failed with a serial error and succeeded after lowering the upload speed.
+\textbf{Objective.} Check that the three boards start both radio stacks and exchange ESP-NOW frames with the watch (C2, \req{04}). \textbf{Hardware.} Three ELEGOO ESP32 boards (ESP32-D0WD-V3 rev 3.1, dual core, 240\,MHz), labelled B0 (beacon, MAC 68:09:47:5F:C6:F4), R1 (68:09:47:5F:BE:38) and R2 (68:09:47:5F:A7:AC). \textbf{Code.} \texttt{code/node\_link\_board.ino} on the boards, \texttt{code/node\_link\_watch.ino} on the watch. \textbf{Method.} The watch sends 30 numbered ESP-NOW pings, 100\,ms apart; each board answers every ping it hears with a reply carrying its count of pings heard and the signal strength (RSSI) it measured. The watch counts replies (RT, of 30). Indoors, one watch on a desk edge, boards on a bed; each board about 1\,m from the watch. \textbf{Pass (set before running).} All six start-up steps pass on each board, and $\mathrm{RT}\ge 27$ of 30 for each board in both of the first two rounds. \textbf{Board start-up.} 6 of 6 steps PASS on B0, R1 and R2 (Wi-Fi station mode, ESP-NOW init, callbacks, broadcast peer, BLE init, BLE advertising); heap free 215{,}712\,B at boot and 77{,}688\,B after both stacks. R1's first upload failed with a serial error and succeeded after lowering the upload speed.
 
 \textbf{Arrangements.} Rounds 1--5: boards in a row on the bed on their original cables (R2 on a wall charger through a meter cable, R1 on a braided cable, B0 on a thin cable to the laptop, beside the laptop). Rounds 6--15 ($^{*}$, exploratory, after the first two rounds missed the criterion): the author first swapped the R1 and R2 cables without moving the boards, then moved the boards with the original cables, then rotated the boards around the three cable positions, repeating some positions to see whether results recurred. The round number of each arrangement was not recorded, so no per-arrangement conclusion is drawn. Values for rounds 2--15 were read from the watch's history screen and agree with the photographs of the individual rounds; round 12 comes from the history screen only.
 
@@ -297,6 +299,56 @@ Rate & 92.4\,\% & 90.7\,\% & 92.9\,\% & & & & \\
 \end{tabular}
 \end{center}
 \textbf{Result.} 1242 of 1350 pings answered (92.0\,\%). The criterion was \emph{not fully met}: in round 2, R1 gave 26 (B0 and R2 gave 27). Over all 15 rounds, $\mathrm{RT}\ge 27$ held in 39 of 45 board-rounds (R1 below 27 in rounds 2, 4, 6 and 8; B0 in rounds 9 and 14; R2 never), and all three boards reached 27 together in 9 of 15 rounds. \textbf{Observations.} (1) R1's rate (90.7\,\%) is only about 2 points below B0 and R2, which is within what chance gives for 450 pings; R2, the board on the wall charger, scored best. (2) The count of pings each board reports hearing equals RT almost every round, so the losses are on the watch-to-board leg, not on the replies. (3) The boards hear the watch about 9\,dB more strongly than the watch hears them, on all three boards. (4) In the row layout R1 was weakest at the watch ($-71$ to $-78$\,dBm), and varied by 7\,dB between rounds 1--5; in rounds 6--15 all boards read $-59$ to $-66$\,dBm. (5) Loss did not follow signal strength: R1 gave 25 of 30 at $-61$ (round 8) and $-66$\,dBm (round 6) and 30 of 30 at $-64$\,dBm (round 14). (6) Counts cluster at 27--29; for B0 the spread (standard deviation about 1.0) is smaller than random loss at 8\,\% would give (about 1.5), which suggests a systematic rather than random cause. (7) The average rate (about 92\,\%) sits close to the 90\,\% line, so 27 of 30 is met or missed almost by chance, and the same line applies at 30\,m (C3). Possible causes, \emph{not tested}: the watch redraws its screen six times per round while sending; BLE advertising on the boards may align with the 100\,ms ping interval; interference from the laptop and home Wi-Fi. \textbf{Limits.} 1--2\,m, indoors, one watch; this is not the 30\,m test (C3), and RSSI from the watch is not comparable with RSSI at the boards without calibration (C6).
+
+\subsection*{L-10, 2026-11-16: does BLE advertising on the boards cost ESP-NOW packets?}
+\textbf{Objective.} Test the idea from L-09 that BLE advertising on the boards, which share one radio between Wi-Fi and Bluetooth on the classic ESP32, causes the loss of about 8\,\% of pings. \textbf{Code.} \texttt{code/node\_link\_board.ino} with a \texttt{BLE\_ON} switch (and a fix so a restarted watch does not leave a stale ``heard'' count). R1 was flashed with \texttt{BLE\_ON 0}: start-up steps 1--4 PASS, BLE steps skipped, heap free after start 214{,}648\,B against 77{,}688\,B with BLE on. B0 and R2 were unchanged, BLE on. \textbf{Method.} As in L-09, in an open room of about 3\,m by 4\,m with a radio in it, boards in an arc about 1\,m from the watch, all upright, powered by USB. Rounds 1--5 (block A), then R1 and R2 swapped positions, each keeping its own power and cable, rounds 6--10 (block B). \textbf{Prediction, stated before running.} If BLE is the cause, R1 scores higher than B0 and R2 in both blocks; if the score follows position, position is the cause; if all three look alike, BLE is not the cause.
+
+\begin{center}\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}c ccc c ccc@{}}
+\toprule
+Round & \multicolumn{3}{c}{RT of 30} & & \multicolumn{3}{c}{RSSI at watch (dBm)}\\
+ & B0 & R1 (BLE off) & R2 & & B0 & R1 & R2\\
+\midrule
+1 & 29 & 30 & 29 & & $-61$ & $-70$ & $-66$\\
+2 & 28 & 30 & \textbf{25} & & $-63$ & $-65$ & $-69$\\
+3 & 29 & 30 & \textbf{25} & & $-64$ & $-66$ & $-61$\\
+4 & 29 & 28 & 27 & & $-61$ & $-74$ & $-62$\\
+5 & 28 & 28 & 28 & & $-60$ & $-70$ & $-66$\\
+\midrule
+6 & 28 & 29 & 28 & & $-62$ & $-71$ & $-62$\\
+7 & 27 & 30 & 28 & & $-60$ & $-71$ & $-60$\\
+8 & 28 & 29 & 28 & & $-62$ & $-69$ & $-61$\\
+9 & 30 & 29 & 27 & & $-61$ & $-69$ & $-60$\\
+10 & \textbf{26} & 29 & 28 & & $-61$ & $-69$ & $-60$\\
+\midrule
+Total of 300 & 282 & 292 & 273 & & & & \\
+Rate & 94.0\,\% & 97.3\,\% & 91.0\,\% & & & & \\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Result.} R1 (BLE off) answered 292 of 300 pings (97.3\,\%) and was never below 28; B0 (BLE on) answered 282 (94.0\,\%), with 26 in round 10; R2 (BLE on) answered 273 (91.0\,\%), with 25 in rounds 2 and 3. R1 scored 97.3\,\% in both blocks, so its result did not follow position. In the same session R1 was about 4.8 points above the two BLE-on boards (pooled 92.5\,\%), roughly 2.7 standard errors if pings are treated as independent; against R1's own 90.7\,\% with BLE on at home (L-09, 450 pings) it is 6.6 points higher. \textbf{Conclusion.} BLE advertising on the boards probably costs about 5--7\,\% of received pings. This is consistent with the hypothesis, not proof: one board, one session, one place. R1 still lost 2.7\,\%, and it read weaker at the watch than B0 and R2 in both blocks (about $-69$ against $-61$\,dBm). BLE also costs about 137\,KB of heap on the boards. \textbf{Next.} Flash B0 and R2 with BLE off and repeat the 1\,m test with the pass line written beforehand ($\mathrm{RT}\ge 27$ for every board in every round). \textbf{Limits.} 1--2\,m indoors, one watch, not the 30\,m test (C3).
+
+\subsection*{L-11, 2026-11-16: clean re-test of Test 1b with BLE off on all three boards}
+\textbf{Objective.} Repeat the L-09 link test with BLE advertising off on every board, to see whether the original criterion is met once the cause found in L-10 is removed. \textbf{Code.} \texttt{code/node\_link\_board.ino} with \texttt{BLE\_ON 0} on B0, R1 and R2 (NODE\_ID 0, 1, 2), \texttt{code/node\_link\_watch.ino} unchanged. B0 and R2 were reflashed with BLE off, as R1 was in L-10. \textbf{Method.} As in L-09: boards in an arc about 1\,m from the watch, USB power, 5 rounds of 30 pings 100\,ms apart. Place: an open room of about 3\,m by 4\,m with a radio in it (not a known 2.4\,GHz source). \textbf{Pass line, written before running.} $\mathrm{RT}\ge 27$ of 30 for every board in every round (15 of 15 board-rounds).
+
+\begin{center}\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}c ccc c ccc@{}}
+\toprule
+Round & \multicolumn{3}{c}{RT of 30} & & \multicolumn{3}{c}{RSSI at watch (dBm)}\\
+ & B0 & R1 & R2 & & B0 & R1 & R2\\
+\midrule
+1 & 30 & 30 & 30 & & $-68$ & $-63$ & $-73$\\
+2 & 30 & 30 & 30 & & $-64$ & $-63$ & $-76$\\
+3 & 30 & 30 & 30 & & $-65$ & $-64$ & $-75$\\
+4 & 30 & 30 & 29 & & $-63$ & $-62$ & $-71$\\
+5 & 29 & 29 & 30 & & $-66$ & $-63$ & $-71$\\
+\midrule
+Total of 150 & 149 & 149 & 149 & & & & \\
+Rate & 99.3\,\% & 99.3\,\% & 99.3\,\% & & & & \\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Result.} The pass line was met: the lowest count was 29, in 15 of 15 board-rounds RT $\ge 27$. 447 of 450 pings were answered (99.3\,\%); 3 were lost, against 108 of 1350 (8.0\,\%) in L-09. All three boards scored the same, 149 of 150. R2 was the weakest at the watch ($-71$ to $-76$\,dBm) and still lost only one ping, so with BLE off the delivery did not depend on signal strength within this range. \textbf{Conclusion.} Together with L-10, this supports that BLE advertising on the boards caused most of the lost pings, and that ESP-NOW alone meets the 27 of 30 line at 1--2\,m indoors with wide margin (99.3\,\% against the 90\,\% line). This changes nothing about 30\,m (C3), which stays untested. For the design, the beacon should use ESP-NOW as its link and keep BLE off while receiving. \textbf{Limits.} 5 rounds, 1--2\,m indoors, one watch, one place; the position of each board relative to the watch was not recorded here \pend{arrangement, if the author wants it}.
 
 \textbf{AI use.} Test code and this document's scaffolding were produced with an AI assistant from the instructor's guide, the proposal and the instructor session; results are the author's measurements and must be checked against the logbook.
 
