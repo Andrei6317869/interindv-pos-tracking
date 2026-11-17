@@ -39,7 +39,7 @@
 {\Large\bfseries Interindividual Position Tracking and Subdividing}\\[2pt]
 {\large Stage 1 Concept and Feasibility Report}\\[2pt]
 Andrei Prodan (6317869) \quad|\quad Project I -- Proposal, Planning \& Prototyping (247-519-VA)\\
-Vanier College \quad|\quad Working draft of 16 November 2026 \quad|\quad Due 20 November 2026
+Vanier College \quad|\quad Working draft of 17 November 2026 \quad|\quad Due 20 November 2026
 \end{center}
 
 % ---------------------------------------------------------------- 1
@@ -48,7 +48,7 @@ No departures from the submitted proposal. Needs N1--N6, requirements \req{01}--
 
 % ---------------------------------------------------------------- 2
 \section{Concept Alternatives}
-\textbf{Criteria and weights} were written on 2026-11-13 (L-06) before any score and sum to 1.00. Scores run 1--5, 5 best. Coverage assumes the link works; the risk that it does not is scored under uncertainty. \pend{author confirms weights and scores}
+\textbf{Criteria and weights} were written on 2026-11-13 (L-06) before any score and sum to 1.00. Scores run 1--5, 5 best. Coverage assumes the link works; the risk that it does not is scored under uncertainty. The author reviewed and accepted the weights and scores on 2026-11-16.
 
 \begin{center}\sm
 \begin{tabularx}{\textwidth}{@{}Y c c c c@{}}
@@ -105,10 +105,10 @@ Every claim carries its class, its logbook source and a status. C3 and C6 are \e
 ID & Tests & Claim & Class & Source & Evidence & Status\\
 \midrule
 C1 & \req{04} & The watch can run ESP-NOW and BLE advertising together. & Measured & L-04 & Steps 1--8 pass; 31 of 31 send callbacks OK over 30\,s. & Supported\\
-C2 & \req{04}, \req{02} & A second device receives the watch's frames, and the reverse. & Measured & L-04, L-09 & BLE: a PC found the advertisement and paired. ESP-NOW, three boards at about 1--2\,m indoors: 1242 of 1350 pings answered (92.0\,\%) over 15 rounds, so frames arrive both ways. Range untested. & Supported\\
-C3 & \req{02} & At least 27 of 30 messages arrive correctly at 30\,m. & Assumed & L-02 & Not tested at 30\,m; no space for it at present. Warning (L-09): at 1--2\,m indoors the mean rate (92\,\%) sat near the 90\,\% line. L-10, L-11: with BLE off on all three boards, 447 of 450 pings (99.3\,\%) were answered at 1--2\,m, against 92\,\% with BLE on, so BLE on the beacon costs about 5--7 points. & Open\\
-C4 & \req{01}, \req{06} & Watch filtering and consent gate behave correctly. & Measured & L-07 & L-07: Test 6 24/24; Test 7 12/12 (4 accept, 3 reject, 3 timeout, 2 filtered), 4 profile sends, 6 blocked, 0 violations. Abstract skill model on the watch, tap input; radio send and beacon side not tested. & Partly supported\\
-C5 & \req{08} & Selection covers all task skills in $\ge 90\,\%$ of trials where a valid subgroup exists. & Measured & L-08 & L-08: hand cases 8/8; 3$\times$1000 simulated trials, 100\,\% covered where a valid subgroup exists (1302 trials), 0 invalid picks, 0 false claims. Abstract skills, no radio; reachability is R1/R2. & Partly supported\\
+C2 & \req{04}, \req{02} & A second device receives the watch's frames, and the reverse. & Measured & L-04, L-09 & BLE: a PC found the advertisement and paired. ESP-NOW, three boards at 1--2\,m indoors: 1242 of 1350 pings answered (92.0\,\%, L-09), 447 of 450 with BLE off (L-11); frames arrive both ways. Range untested. & Supported\\
+C3 & \req{02} & At least 27 of 30 messages arrive correctly at 30\,m. & Assumed & L-02 & Not tested at 30\,m; no space for it at present. At 1--2\,m, BLE on the boards cost about 5--7 points of pings (L-10); with BLE off 99.3\,\% were answered (L-11). & Open\\
+C4 & \req{01}, \req{06} & Watch filtering and consent gate behave correctly. & Measured & L-07 & L-07: Test 6 24/24; Test 7 12/12 (4 accept, 3 reject, 3 timeout, 2 filtered), 4 profile sends, 6 blocked, 0 violations. Abstract skill model on the watch, tap input. L-12 over radio: request reached the watch 10/10; profile sent only after ACCEPT (5 sent, 3 blocked, 0 violations); others scripted. & Partly supported\\
+C5 & \req{08} & Selection covers all task skills in $\ge 90\,\%$ of trials where a valid subgroup exists. & Measured & L-08 & L-08: hand cases 8/8; 3$\times$1000 simulated trials, 100\,\% covered where a valid subgroup exists (1302 trials), 0 invalid picks, 0 false claims. Abstract skills. L-12: group built from profiles returned over the radio matched the hand-written answer 10/10 (simpler rule than Test 10); range is R1/R2. & Partly supported\\
 C6 & R2 & Position from 2D RSSI trilateration agrees with known positions. & Assumed & L-02 & Boards arrived (L-09); no position measured yet. Signal at the watch from R1 varied by 7\,dB over rounds 1--5. Tolerance, set 2026-11-15 before any data (L-09): mean position error $\le 25\,\%$ of the longest separation between reference points and smaller than the error of guessing the layout centre. & Open\\
 C7 & \req{07} & The beacon's neighbour record and profile data fit in memory with both stacks active. & Calc.\ + measured & L-03, L-04 & Calc.: at most 26\,B. Measured: 173{,}372\,B heap free after both stacks. Beacon board: 77{,}688\,B heap free with both stacks active, 214{,}648\,B with BLE off (L-09, L-10). Not yet loaded on device. & Partly supp.\\
 \bottomrule
@@ -140,13 +140,13 @@ Baseline is provisional until tests are run. No requirement has been changed.
 \toprule
 ID & Subject & Needs & Status & Reason and next check\\
 \midrule
-\req{01} & Broadcast requests reach watches & N1, N4, N5 & Open & Keep. Watch-side filtering supported (L-07); delivery needs Test 4.\\
+\req{01} & Broadcast requests reach watches & N1, N4, N5 & Open & Keep. Watch-side filtering supported (L-07); L-12: request reached the watch 10/10 at 1\,m. Range untested.\\
 \req{02} & $\ge 90\,\%$ delivery at 30\,m & N4 & Open & Keep. Test 2 (27/30), needs beacon.\\
-\req{03} & Two watches at once & N1 & Open & Keep. Test 5, needs second device.\\
-\req{04} & Request/response exchange & N1, N2, N4 & Partly supported & Keep. Watch runs both stacks (C1); BLE advertisement found and paired by a PC (C2); ESP-NOW ping and reply with B0 at about 1--2\,m: 26--29 of 30 per round (L-09); request/response with consent over the radio not yet tested.\\
+\req{03} & Two watches at once & N1 & Partly supported & Keep. L-12: watch plus one or two scripted boards answered together (runs 1, 3, 8), all counted. Others are boards, not watches.\\
+\req{04} & Request/response exchange & N1, N2, N4 & Partly supported & Keep. Both stacks run (C1); BLE found by a PC (C2); ESP-NOW ping and reply 99.3\,\% at 1--2\,m (L-11); request, consent, reply 10/10 at 1\,m (L-12).\\
 \req{05} & Removable modules & N4 & Open & Keep. Inspection once beacon is built.\\
-\req{06} & Explicit consent before sharing & N2 & Partly supported & Keep. Watch side supported (L-07, 0 violations in 12 runs); full check after beacon.\\
-\req{07} & Report group size and leader & N6 & Open & Keep. Test 11; memory sizing supports it (C7).\\
+\req{06} & Explicit consent before sharing & N2 & Partly supported & Keep. Watch side supported (L-07, 0 violations in 12 runs); over the radio (L-12) profile sent only after ACCEPT, 0 violations in 10 runs.\\
+\req{07} & Report group size and leader & N6 & Partly supported & Keep. L-12: correct size, leader, members 10/10 (groups of 0--3), shown on the watch; memory sizing (C7).\\
 \req{08} & Subgroup covers task skills & N1, N5 & Partly supported & Keep. Selection logic supported in simulation (L-08); reaching the chosen watches needs the boards.\\
 \bottomrule
 \end{tabularx}
@@ -197,7 +197,7 @@ Mitigation & Test the link early; if it fails, record the delivery-versus-distan
 
 % ---------------------------------------------------------------- 6
 \section{Gate 1 Readiness}
-\emph{Draft, to be rewritten after the remaining tests.} The one measured result so far is that the watch runs ESP-NOW and BLE together (C1, L-04) with ample memory (C7). A PC also discovered and paired with the watch's BLE advertisement (C2, partly). Watch-side filtering, consent (C4, L-07) and subgroup selection logic (C5, L-08) are supported in simulation on the watch. No claim about range, delivery or proximity is yet supported (C3, C6); they are open and each names its test. The three ESP32 boards arrived by 2026-11-15 (L-05, L-09) and exchange ESP-NOW frames with the watch (C2), but at 1--2\,m indoors round trips averaged 92.0\,\% over 15 rounds and the first two rounds missed the 27 of 30 criterion once (R1, 26). L-10 and L-11 identify BLE advertising on the boards as the main cause: with it off on all three boards, 447 of 450 pings (99.3\,\%) were answered and the criterion held in every board-round. This favours ESP-NOW alone on the beacon, as the proposal's single selected wireless interface allows. Provisional expected outcome: \textbf{proceed with conditions}, the condition being the 30\,m delivery test, for which space is not yet available. \pend{confirm outcome}
+\emph{Draft, to be rewritten after the remaining tests.} Measured so far: the watch runs ESP-NOW and BLE together with ample memory (C1, C7); watch-side filtering, consent and subgroup selection work (C4, C5); and at 1--2\,m indoors the watch, beacon and two boards exchange ESP-NOW frames. BLE advertising on the boards caused most of the early loss (92\,\% of pings answered, L-09); with it off, 447 of 450 (99.3\,\%) were answered (L-10, L-11), which favours ESP-NOW alone on the beacon, as the proposal's single selected interface allows. With BLE off, request, consent, reply and group report worked 10 of 10 runs (L-12). No claim about range or position is yet supported (C3, C6). Provisional expected outcome: \textbf{proceed with conditions}, the condition being the 30\,m delivery test, for which space is not yet available. \pend{confirm outcome}
 
 % ================================================================ appendices
 \clearpage
@@ -212,19 +212,20 @@ L-02 & 2026-10-23, 2026-11-06 & Research on links (ESP-NOW, Bluetooth LE, extern
 L-03 & 2026-11-13 & Session with instructor on storing connectivity between wireless agents and a beacon. The adjacency matrix is the relevant part (Section~3); sparse (CSR) storage is optional background (Appendix~B). The HTML/JS simulator \texttt{beacon\_app.html} is to be extended with the RSSI data gathered in testing. Files: \texttt{beacon\_storage.tex/pdf}, \texttt{beacon\_sim.py}, \texttt{beacon\_app.html}, \texttt{beacon\_network.png}.\\
 L-04 & 2026-11-13 & Test 1a, below.\\
 L-05 & 2026-11-13 & Three ESP32 boards in shipping: the beacon and two further reference points, which give the three reference points 2D trilateration needs (L-02). Received by 2026-11-15 (L-09). Tests 2--5 and the position measurements remain open.\\
-L-06 & 2026-11-13 & Criteria and weights for Section~2 (coverage 0.35, uncertainty 0.25, buildability 0.25, cost 0.15), written before scoring; chosen by the assistant at the author's request, \pend{author confirms}.\\
+L-06 & 2026-11-13 & Criteria and weights for Section~2 (coverage 0.35, uncertainty 0.25, buildability 0.25, cost 0.15), written before scoring; chosen by the assistant at the author's request; the author confirmed them on 2026-11-16.\\
 L-07 & 2026-11-13 & Tests 6 and 7 on the watch screen: 24/24 and 12/12, overall PASS, touch input.\\
 L-08 & 2026-11-13 & Test 10, subgroup selection on the watch: hand cases 8/8, 3$\times$1000 random trials, overall PASS.\\
 L-09 & 2026-11-15 & Boards arrive; Test 1b, ESP-NOW link watch$\leftrightarrow$B0, R1, R2: 1242 of 1350 round trips (92.0\,\%) over 15 rounds; criterion missed once in the first two rounds (R1, 26), met in 39 of 45 board-rounds overall.\\
 L-10 & 2026-11-16 & BLE advertising switched off on R1 only: R1 97.3\,\% against 94.0\,\% (B0) and 91.0\,\% (R2) with BLE on, in the same session and with positions swapped; BLE on the boards probably costs 5--7 points of delivery.\\
 L-11 & 2026-11-16 & Test 1b repeated with BLE off on all three boards, 1--2\,m: 447 of 450 round trips (99.3\,\%), every board in every round 29 or 30; pass line RT $\ge 27$ met in 15 of 15 board-rounds. BLE advertising was the main cause of the L-09 loss.\\
+L-12 & 2026-11-17 & Tests 4, 5 and 11 over ESP-NOW, BLE off: beacon B0, scripted R1 and R2, watch with touch consent, 10 runs: request reached the watch 10/10, report 10/10, size, leader and members correct 10/10, profile sent only after ACCEPT (5 sent, 3 blocked, 0 violations). Overall PASS.\\
 \bottomrule
 \end{tabularx}
 \end{center}
 L-01 (early brainstorming) predates the proposal and is not reproduced here.
 
 \subsection*{L-02, 2026-10-23 and 2026-11-06, assumed: link and positioning research}
-\textbf{Objective.} Compare candidate links and positioning methods for R1 and R2. \textbf{Class.} Secondary sources only, nothing measured, so every figure is \emph{assumed}. Only the ESP-NOW description cites a source (Espressif, \texttt{espressif.com/en/solutions/low-power-solutions/esp-now}); \pend{sources for the range figures}.
+\textbf{Objective.} Compare candidate links and positioning methods for R1 and R2. \textbf{Class.} Secondary sources only, nothing measured, so every figure is \emph{assumed}. Only the ESP-NOW description cites a source (Espressif, \texttt{espressif.com/en/solutions/low-power-solutions/esp-now}); the range figures came from an AI assistant (Gemini) and were not checked against a primary source, so they stay \emph{assumed} until measured (C3).
 
 \begin{center}\footnotesize\setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}l l l p{2.6in}@{}}
@@ -255,7 +256,7 @@ nRF24L01 (2.4\,GHz) & 30--100\,m & 10--30\,m & hurt by walls, concrete floors, 2
 
 \textbf{Anomalies and limits.} Step 7 reports pass unconditionally after the advertising call, so it alone does not show BLE visibility. ESP-NOW callback success is not proof of reception. The sketch's setup note said 16\,MB flash; the board reports 32\,MiB, which does not affect the result.
 
-\textbf{Addendum, 2026-11-13, measured (BLE only).} Using Microsoft Bluetooth LE Explorer on a PC, the author found the watch's advertisement (name \texttt{T1a-watch}) and paired with it. Not recorded: \pend{PC model and OS, distance, how many attempts}. This shows another device can discover and pair over BLE; it does not show message delivery, range, ESP-NOW reception, or reception by the beacon.
+\textbf{Addendum, 2026-11-13, measured (BLE only).} Using Microsoft Bluetooth LE Explorer on a PC, the author found the watch's advertisement (name \texttt{T1a-watch}) and paired with it. Not recorded: PC: Lenovo ThinkPad Yoga 11e, Windows 10; the PC was close to the watch and the first attempt succeeded. This shows another device can discover and pair over BLE; it does not show message delivery, range, ESP-NOW reception, or reception by the beacon.
 
 \textbf{Raw serial output} (\texttt{logs/L-04\_test1a\_serial.txt}):
 {\footnotesize\verbatiminput{logs/L-04_test1a_serial.txt}}
@@ -349,6 +350,29 @@ Rate & 99.3\,\% & 99.3\,\% & 99.3\,\% & & & & \\
 \end{tabular}
 \end{center}
 \textbf{Result.} The pass line was met: the lowest count was 29, in 15 of 15 board-rounds RT $\ge 27$. 447 of 450 pings were answered (99.3\,\%); 3 were lost, against 108 of 1350 (8.0\,\%) in L-09. All three boards scored the same, 149 of 150. R2 was the weakest at the watch ($-71$ to $-76$\,dBm) and still lost only one ping, so with BLE off the delivery did not depend on signal strength within this range. \textbf{Conclusion.} Together with L-10, this supports that BLE advertising on the boards caused most of the lost pings, and that ESP-NOW alone meets the 27 of 30 line at 1--2\,m indoors with wide margin (99.3\,\% against the 90\,\% line). This changes nothing about 30\,m (C3), which stays untested. For the design, the beacon should use ESP-NOW as its link and keep BLE off while receiving. \textbf{Limits.} 5 rounds, 1--2\,m indoors, one watch, one place; the position of each board relative to the watch was not recorded here \pend{arrangement, if the author wants it}.
+
+\subsection*{L-12, 2026-11-17: Tests 4, 5 and 11, request, consent and group report over ESP-NOW}
+\textbf{Objective.} Check over the radio that a broadcast request reaches the watch (Test 4, \req{01}), that two or three participants answer in the same run (Test 5, \req{03}), and that the beacon reports the correct group size and leader (Test 11, \req{07}), with consent before any profile is sent (\req{06}). \textbf{Code.} \texttt{code/test4\_5\_11\_board.ino} on B0 (beacon, \texttt{NODE\_ID} 0), R1 (1) and R2 (2); \texttt{code/test4\_5\_11\_watch.ino} on the watch. BLE not used. Protocol: the watch sends GO (3 copies); B0 broadcasts the request (3 copies); relevant participants answer with their profile only after accepting (R1 and R2 by script, the watch by touch); after 9.5\,s B0 broadcasts the report (3 copies). Group = the participants whose profile arrived; leader = the member covering the most requested skills, a tie going to the lowest id. Profiles (abstract skills): watch $\{A,C\}$, R1 $\{B,C\}$, R2 $\{D,E\}$. \textbf{Method.} Boards within about 1\,m of the watch, USB powered; 10 runs, the watch showing before each what to tap (accept, reject, nothing). The expected size, leader and members of each run were written by hand in the watch sketch before running. \textbf{Pass line, written before running.} In all 10 runs the request reached the watch, the report arrived, and size, leader and members equalled the expected ones; the watch sent its profile only in accept runs (0 violations).
+
+\begin{center}\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}c l l l c c l@{}}
+\toprule
+Run & Request & Watch action & Others answering & Size & Leader & Result\\
+\midrule
+1 & $\{C\}$ & accept & R1 & 2 & R1 & ok\\
+2 & $\{A\}$ & accept & none & 1 & W & ok\\
+3 & $\{B,C,D\}$ & accept & R1, R2 & 3 & R1 & ok\\
+4 & $\{D,E\}$ & filtered & R2 & 1 & R2 & ok\\
+5 & $\{C\}$ & reject & R1 & 1 & R1 & ok\\
+6 & $\{C\}$ & accept & R1 rejects & 1 & W & ok\\
+7 & $\{B,C,D\}$ & timeout & R1; R2 rejects & 1 & R1 & ok\\
+8 & $\{A,C\}$ & accept & R1 & 2 & W & ok\\
+9 & $\{F\}$ & filtered & none & 0 & none & ok\\
+10 & $\{C\}$ & reject & R1 rejects & 0 & none & ok\\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Result.} 10 of 10 runs matched the expected answer; the request reached the watch in 10 of 10 runs and the report in 10 of 10. The watch sent its profile 5 times (the 5 accept runs), blocked it 3 times (the 2 reject runs and the 1 timeout run in which the watch was relevant) and had 0 violations. Runs 1, 3 and 8 had two or three participants answering in the same run. Overall PASS. \textbf{Conclusion.} At 1\,m, with BLE off, the radio path request $\to$ consent $\to$ reply $\to$ group report works and the beacon's group size and leader are correct for groups of 0 to 3. This supports \req{01}, \req{04}, \req{06} and \req{07} in part, and \req{03} only in the sense of one watch plus scripted boards. \textbf{Limits.} R1 and R2 are scripted boards, not watches, and a second watch is not available; abstract skills; one request at a time; 1\,m indoors, not the 30\,m test (C3); the report is displayed on the watch, not on a coordinator device; the broadcasts are sent three times each because ESP-NOW broadcast has no acknowledgement (the test does not measure how often a single copy is lost). A lost request or lost report would have shown as FAIL.
 
 \textbf{AI use.} Test code and this document's scaffolding were produced with an AI assistant from the instructor's guide, the proposal and the instructor session; results are the author's measurements and must be checked against the logbook.
 
