@@ -106,7 +106,7 @@ ID & Tests & Claim & Class & Source & Evidence & Status\\
 \midrule
 C1 & \req{04} & The watch can run ESP-NOW and BLE advertising together. & Measured & L-04 & Steps 1--8 pass; 31 of 31 send callbacks OK over 30\,s. & Supported\\
 C2 & \req{04}, \req{02} & A second device receives the watch's frames, and the reverse. & Measured & L-04, L-09 & BLE: a PC found the advertisement and paired. ESP-NOW, three boards at 1--2\,m indoors: 1242 of 1350 pings answered (92.0\,\%, L-09), 447 of 450 with BLE off (L-11); frames arrive both ways. Range untested. & Supported\\
-C3 & \req{02} & At least 27 of 30 messages arrive correctly at 30\,m. & Assumed & L-02 & Not tested at 30\,m; no space for it at present. At 1--2\,m, BLE on the boards cost about 5--7 points of pings (L-10); with BLE off 99.3\,\% were answered (L-11). & Open\\
+C3 & \req{02} & At least 27 of 30 messages arrive correctly at 30\,m. & Measured (variant) & L-02, L-13, L-15 & Busy college hallway (L-13, L-15): B0 answered 13, 9, 8 and, moved away from the laptop, 24, 26, 21 of 30 at 30\,m. Outdoor test not done. & Open\\
 C4 & \req{01}, \req{06} & Watch filtering and consent gate behave correctly. & Measured & L-07 & L-07: Test 6 24/24; Test 7 12/12 (4 accept, 3 reject, 3 timeout, 2 filtered), 4 profile sends, 6 blocked, 0 violations. Abstract skill model on the watch, tap input. L-12 over radio: request reached the watch 10/10; profile sent only after ACCEPT (5 sent, 3 blocked, 0 violations); others scripted. & Partly supported\\
 C5 & \req{08} & Selection covers all task skills in $\ge 90\,\%$ of trials where a valid subgroup exists. & Measured & L-08 & L-08: hand cases 8/8; 3$\times$1000 simulated trials, 100\,\% covered where a valid subgroup exists (1302 trials), 0 invalid picks, 0 false claims. Abstract skills. L-12: group built from profiles returned over the radio matched the hand-written answer 10/10 (simpler rule than Test 10); range is R1/R2. & Partly supported\\
 C6 & R2 & Position from 2D RSSI trilateration agrees with known positions. & Assumed & L-02 & Boards arrived (L-09); no position measured yet. Signal at the watch from R1 varied by 7\,dB over rounds 1--5. Tolerance, set 2026-11-15 before any data (L-09): mean position error $\le 25\,\%$ of the longest separation between reference points and smaller than the error of guessing the layout centre. & Open\\
@@ -141,7 +141,7 @@ Baseline is provisional until tests are run. No requirement has been changed.
 ID & Subject & Needs & Status & Reason and next check\\
 \midrule
 \req{01} & Broadcast requests reach watches & N1, N4, N5 & Open & Keep. Watch-side filtering supported (L-07); L-12: request reached the watch 10/10 at 1\,m. Range untested.\\
-\req{02} & $\ge 90\,\%$ delivery at 30\,m & N4 & Open & Keep. Test 2 (27/30), needs beacon.\\
+\req{02} & $\ge 90\,\%$ delivery at 30\,m & N4 & Open & Keep. L-13: busy hallway below the line; outdoor Test 2 not done.\\
 \req{03} & Two watches at once & N1 & Partly supported & Keep. L-12: watch plus one or two scripted boards answered together (runs 1, 3, 8), all counted. Others are boards, not watches.\\
 \req{04} & Request/response exchange & N1, N2, N4 & Partly supported & Keep. Both stacks run (C1); BLE found by a PC (C2); ESP-NOW ping and reply 99.3\,\% at 1--2\,m (L-11); request, consent, reply 10/10 at 1\,m (L-12).\\
 \req{05} & Removable modules & N4 & Open & Keep. Inspection once beacon is built.\\
@@ -187,7 +187,7 @@ $p\backslash c$ & 1 & 2 & 3 & 4\\\hline
 Statement & The custom beacon hardware may not deliver messages reliably to a compatible watch at 30\,m (R1).\\
 Assumption & The selected wireless interface can deliver beacon messages to the watch at that range under the test conditions.\\
 Consequence & Major: \req{02} unmet and every later function depends on the link.\\
-Probability & Likely, unchanged. Test 1a shows the watch can run the stacks, not that a frame crosses 30\,m.\\
+Probability & Likely, unchanged. L-13: below the line in a busy hallway.\\
 Evidence required & At least 27 of 30 messages received correctly at a measured 30\,m, unobstructed outdoors (Test 2, C3).\\
 Mitigation & Test the link early; if it fails, record the delivery-versus-distance curve (10, 20, 30, 40\,m) and narrow the supported range or change the interface.\\
 \bottomrule
@@ -197,7 +197,7 @@ Mitigation & Test the link early; if it fails, record the delivery-versus-distan
 
 % ---------------------------------------------------------------- 6
 \section{Gate 1 Readiness}
-\emph{Draft, to be rewritten after the remaining tests.} Measured so far: the watch runs ESP-NOW and BLE together with ample memory (C1, C7); watch-side filtering, consent and subgroup selection work (C4, C5); and at 1--2\,m indoors the watch, beacon and two boards exchange ESP-NOW frames. BLE advertising on the boards caused most of the early loss (92\,\% of pings answered, L-09); with it off, 447 of 450 (99.3\,\%) were answered (L-10, L-11), which favours ESP-NOW alone on the beacon, as the proposal's single selected interface allows. With BLE off, request, consent, reply and group report worked 10 of 10 runs (L-12). No claim about range or position is yet supported (C3, C6). Provisional expected outcome: \textbf{proceed with conditions}, the condition being the 30\,m delivery test, for which space is not yet available. \pend{confirm outcome}
+\emph{Draft, to be rewritten after the remaining tests.} Measured so far: the watch runs ESP-NOW and BLE together with ample memory (C1, C7); watch-side filtering, consent and subgroup selection work (C4, C5); and at 1--2\,m indoors the watch, beacon and two boards exchange ESP-NOW frames. BLE advertising on the boards caused most of the early loss (92\,\% of pings answered, L-09); with it off, 447 of 450 (99.3\,\%) were answered (L-10, L-11), which favours ESP-NOW alone on the beacon, as the proposal's single selected interface allows. With BLE off, request, consent, reply and group report worked 10 of 10 runs (L-12). A hallway test at 30\,m missed the 27 of 30 line (L-13), so the Section~5 mitigation applies (narrow the range or change the interface). Position (C6) is untested. Provisional outcome: \textbf{proceed with conditions}: an outdoor 30\,m test or a revised range. \pend{confirm outcome}
 
 % ================================================================ appendices
 \clearpage
@@ -219,6 +219,9 @@ L-09 & 2026-11-15 & Boards arrive; Test 1b, ESP-NOW link watch$\leftrightarrow$B
 L-10 & 2026-11-16 & BLE advertising switched off on R1 only: R1 97.3\,\% against 94.0\,\% (B0) and 91.0\,\% (R2) with BLE on, in the same session and with positions swapped; BLE on the boards probably costs 5--7 points of delivery.\\
 L-11 & 2026-11-16 & Test 1b repeated with BLE off on all three boards, 1--2\,m: 447 of 450 round trips (99.3\,\%), every board in every round 29 or 30; pass line RT $\ge 27$ met in 15 of 15 board-rounds. BLE advertising was the main cause of the L-09 loss.\\
 L-12 & 2026-11-17 & Tests 4, 5 and 11 over ESP-NOW, BLE off: beacon B0, scripted R1 and R2, watch with touch consent, 10 runs: request reached the watch 10/10, report 10/10, size, leader and members correct 10/10, profile sent only after ACCEPT (5 sent, 3 blocked, 0 violations). Overall PASS.\\
+L-13 & 2026-11-17 & 30\,m hallway variant of the range test, BLE off, boards together at one end: B0 answered 28 of 30 at 10\,m, 18 at 20\,m, and 13, 9, 8 at 30\,m. Pass line (B0 $\ge 27$ in each 30\,m round) not met. People were walking in the hallway.\\
+L-14 & 2026-11-17 & Delivery against distance, same hallway, B0 beside the laptop: B0 14 and 15 of 30 at 15\,m, 13 and 15 at 25\,m; R1 and R2 21--30 at both distances. No pass line (curve).\\
+L-15 & 2026-11-17 & B0 moved next to R1 and R2, away from the laptop; 30\,m $\times 3$ then 25\,m $\times 2$: B0 24, 26, 21 at 30\,m and 15, 16 at 25\,m. L-13 pass line (B0 $\ge 27$ in each 30\,m round) not met again. People in the way, so low reliability.\\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -373,6 +376,49 @@ Run & Request & Watch action & Others answering & Size & Leader & Result\\
 \end{tabular}
 \end{center}
 \textbf{Result.} 10 of 10 runs matched the expected answer; the request reached the watch in 10 of 10 runs and the report in 10 of 10. The watch sent its profile 5 times (the 5 accept runs), blocked it 3 times (the 2 reject runs and the 1 timeout run in which the watch was relevant) and had 0 violations. Runs 1, 3 and 8 had two or three participants answering in the same run. Overall PASS. \textbf{Conclusion.} At 1\,m, with BLE off, the radio path request $\to$ consent $\to$ reply $\to$ group report works and the beacon's group size and leader are correct for groups of 0 to 3. This supports \req{01}, \req{04}, \req{06} and \req{07} in part, and \req{03} only in the sense of one watch plus scripted boards. \textbf{Limits.} R1 and R2 are scripted boards, not watches, and a second watch is not available; abstract skills; one request at a time; 1\,m indoors, not the 30\,m test (C3); the report is displayed on the watch, not on a coordinator device; the broadcasts are sent three times each because ESP-NOW broadcast has no acknowledgement (the test does not measure how often a single copy is lost). A lost request or lost report would have shown as FAIL.
+
+\subsection*{L-13, 2026-11-17: 30\,m hallway variant of the range test (C3)}
+\textbf{Objective.} See whether ESP-NOW delivers at least 27 of 30 at 30\,m in a straight indoor hallway. \textbf{Code.} \texttt{code/node\_link\_board.ino} with \texttt{BLE\_ON 0} on B0, R1, R2 (NODE\_ID 0, 1, 2) and \texttt{code/node\_link\_watch.ino}, unchanged. \textbf{Method.} The three boards together at one end of the hallway, about 1\,m high, USB powered; the watch held by hand at the same height, still, facing the boards. One round of 30 pings at 10\,m and at 20\,m, then three rounds at 30\,m. Hallway about \pend{length}\,m long, longer than 30\,m and shorter than 40\,m, \pend{width, doors, glass, anything metal}; people were walking in it during the test. Board arrangement: B0 stood in the middle of the PC (the laptop) area. \textbf{Pass line, written before running.} B0 answers at least 27 of 30 in each of the 3 rounds at 30\,m.
+
+\begin{center}\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}c c ccc c ccc@{}}
+\toprule
+Round & Distance & \multicolumn{3}{c}{RT of 30} & & \multicolumn{3}{c}{RSSI at watch (dBm)}\\
+ & (m) & B0 & R1 & R2 & & B0 & R1 & R2\\
+\midrule
+1 & 10 & 28 & 30 & 29 & & $-75$ & $-75$ & $-65$\\
+2 & 20 & 18 & 18 & 23 & & $-83$ & $-81$ & $-76$\\
+3 & 30 & 13 & 8 & 22 & & $-87$ & $-90$ & $-80$\\
+4 & 30 & 9 & 7 & 20 & & $-88$ & $-92$ & $-81$\\
+5 & 30 & 8 & 12 & 18 & & $-84$ & $-83$ & $-78$\\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Result.} The pass line was \emph{not met}: at 30\,m B0 answered 13, 9 and 8 of 30 (30 of 90, 33\,\%), R1 27 of 90 (30\,\%) and R2 60 of 90 (67\,\%). Delivery fell with distance: B0 28 of 30 at 10\,m, 18 at 20\,m, about 10 at 30\,m. The signal at the watch fell from about $-75$\,dBm at 10\,m to $-84$ to $-92$\,dBm at 30\,m, and the count fell sharply between $-75$ and $-83$\,dBm. R2 read about 8 to 10\,dB stronger than B0 and R1 in every round and kept more pings. The three 30\,m rounds fell one after another (13, 9, 8 for B0). \textbf{Conclusion.} In this hallway, with the boards and watch as used, the link did not reach 27 of 30 at 30\,m. The hallway is on the third floor of a college, with people moving in it and other 2.4\,GHz traffic that was not measured, so this is a warning and not a measurement of the link's range: C3 stays open. It is not the proposal's outdoor line-of-sight test, which has not been done, and it does not show the limit of ESP-NOW in general. Possible causes, \emph{not tested}: people walking in the hallway, the watch held in a hand, antenna orientation and height, other 2.4\,GHz traffic in the building. \textbf{Next.} The mitigation in Section~5: record delivery against distance to find where the link drops below the line, and narrow the supported range or change the interface if needed. \textbf{Limits.} One session, one hallway, one watch, 5 rounds, people moving; the round order and board arrangement were not fully recorded.
+
+\subsection*{L-14 and L-15, 2026-11-17: delivery against distance and a repeat with B0 moved}
+\textbf{Objective.} L-14: find where delivery falls between 10 and 30\,m (follow-up to L-13); no pass line, since it measures a curve and does not replace the L-13 line. L-15: repeat the 30\,m check after B0 was moved off the laptop, because B0 had scored below R1 and R2 throughout L-13 and L-14 while standing on or next to the laptop. \textbf{Code and setup.} As L-13 (\texttt{node\_link\_board.ino} with \texttt{BLE\_ON 0}, \texttt{node\_link\_watch.ino}), same hallway, watch held in the hand at the same height, still. L-14: B0 in the middle of the PC (the laptop) area. L-15: B0 moved next to R1 and R2 in a row, powered by a power bank; R1 and R2 powered by the laptop's USB ports. \textbf{Method.} L-14, rounds 6--9: 15\,m $\times 2$, 25\,m $\times 2$. L-15, rounds 10--14: 30\,m $\times 3$, then 25\,m $\times 2$, as confirmed by the author. \textbf{Pass line (L-15, as in L-13).} B0 answers at least 27 of 30 in each of the 3 rounds at 30\,m.
+
+\begin{center}\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}c c l ccc c ccc@{}}
+\toprule
+Round & m & B0 position & \multicolumn{3}{c}{RT of 30} & & \multicolumn{3}{c}{RSSI at watch (dBm)}\\
+ & & & B0 & R1 & R2 & & B0 & R1 & R2\\
+\midrule
+6 & 15 & at laptop & 14 & 28 & 30 & & $-86$ & $-81$ & $-70$\\
+7 & 15 & at laptop & 15 & 21 & 30 & & $-87$ & $-80$ & $-68$\\
+8 & 25 & at laptop & 13 & 26 & 29 & & $-84$ & $-77$ & $-73$\\
+9 & 25 & at laptop & 15 & 28 & 25 & & $-84$ & $-77$ & $-73$\\
+\midrule
+10 & 30 & moved & 24 & 19 & 23 & & $-75$ & $-82$ & $-74$\\
+11 & 30 & moved & 26 & 18 & 25 & & $-72$ & $-81$ & $-75$\\
+12 & 30 & moved & 21 & 15 & 26 & & $-77$ & $-83$ & $-77$\\
+13 & 25 & moved & 15 & 20 & 26 & & $-82$ & $-79$ & $-77$\\
+14 & 25 & moved & 16 & 28 & 28 & & $-82$ & $-75$ & $-75$\\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Result.} The L-15 pass line was \emph{not met}: B0 answered 24, 26 and 21 of 30 at 30\,m (none reached 27). With B0 moved off the laptop, all three boards scored higher at 30\,m than in L-13: B0 24, 26, 21 against 13, 9, 8; R1 19, 18, 15 against 8, 7, 12; R2 23, 25, 26 against 22, 20, 18. The last two rounds, at 25\,m, were lower than the three at 30\,m (B0 15 and 16, signal $-82$\,dBm against $-72$ to $-77$\,dBm), the opposite of the distance trend, and about the same as B0 at 25\,m in L-14 (13 and 15). \textbf{Conclusion.} Standing in the middle of the PC probably lowered B0's delivery at 30\,m, but no board met 27 of 30 in every 30\,m round, and the rounds vary by 5 to 10 pings and in signal at a given distance. The author reports more people in the way during rounds 10 to 14 than in L-13 (not counted or controlled) and other 2.4\,GHz traffic in the building (not measured), so these rounds are of low reliability: a weaker signal at 25\,m than at 30\,m indicates conditions changing between rounds, not distance. The line was not reached in this busy indoor variant; C3 stays open, and the cause of the variation is not identified. Possible causes, \emph{not tested}: people walking in the hallway, the watch held in the hand, the other devices near the boards, other 2.4\,GHz traffic in the building. \textbf{Next.} Outdoor line-of-sight test (the proposal's condition) when space and time allow; otherwise state the supported range from the curve. \textbf{Limits.} One session, one hallway, one watch, 5 rounds per set, people moving, B0's position in L-13 and L-14 recorded loosely.
 
 \textbf{AI use.} Test code and this document's scaffolding were produced with an AI assistant from the instructor's guide, the proposal and the instructor session; results are the author's measurements and must be checked against the logbook.
 
