@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon Network Simulator, v3 groups and coordinator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Built on the instructor's beacon_app.html (arena, adjacency matrix, controls). v3 adds: a coordinator who walks in the arena but is not part of the connectivity graph,
+   temporary beacons, skills, consent chance, edge memory, a locked leader and release. Simulated data only. */
+:root {
+  --bg:#F4F6F8; --panel:#FFFFFF; --ink:#16212C; --muted:#5B6B7A; --line:#D9E0E6; --accent:#C0392B; --link:#7F8C9A;
+  --arena:#F7F9FB; --ok:#1E8E5A; --no:#9AA5B1;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#0F161D; --panel:#16202A; --ink:#E6EDF3; --muted:#93A3B3; --line:#263340; --accent:#FF6B5A; --link:#6B7B8B; --arena:#121B24; --ok:#4CC38A; --no:#5F6E7C; color-scheme: dark; }
+}
+* { box-sizing:border-box; }
+html, body { margin:0; background:var(--bg); color:var(--ink); }
+body { font-family:var(--font-body); font-size:15px; line-height:1.5; -webkit-text-size-adjust:100%; }
+.page { max-width:1240px; margin:0 auto; padding:20px 16px 32px; }
+h1 { font-family:var(--font-mono); font-weight:500; font-size:clamp(20px,4.5vw,26px); letter-spacing:-0.01em; margin:0 0 6px; text-wrap:balance; }
+.sub { margin:0 0 16px; color:var(--muted); max-width:78ch; }
+.app { display:grid; gap:16px; grid-template-columns:minmax(0,1fr); grid-template-areas:"stage" "controls" "results"; }
+@media (min-width:920px) { .app { grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); grid-template-areas:"stage results" "controls results"; align-items:start; } }
+.stage{grid-area:stage;} .controls{grid-area:controls;} .results{grid-area:results;}
+.card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; }
+.card h2 { font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin:0 0 10px; }
+.stack { display:flex; flex-direction:column; gap:16px; }
+canvas { display:block; width:100%; border-radius:8px; }
+#net { aspect-ratio:1; background:var(--arena); max-height:680px; }
+#mat { aspect-ratio:1; max-width:420px; margin:0 auto; }
+#lay { aspect-ratio:1.5; background:var(--arena); }
+.legend { display:flex; flex-wrap:wrap; gap:6px 14px; margin:12px 2px 0; font-size:13px; color:var(--muted); }
+.legend span { display:inline-flex; align-items:center; gap:6px; }
+.sw { width:11px; height:11px; border-radius:50%; display:inline-block; }
+.hint { margin:8px 2px 0; font-size:13px; color:var(--muted); }
+.controls .grid { display:grid; gap:12px 20px; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); }
+.field label { display:flex; justify-content:space-between; font-size:14px; margin-bottom:2px; }
+.field output { font-family:var(--font-mono); color:var(--muted); font-variant-numeric:tabular-nums; }
+input[type=range] { width:100%; accent-color:var(--accent); height:26px; margin:0; }
+.row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:14px; }
+button { font:inherit; font-weight:500; color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:9px 16px; min-height:40px; cursor:pointer; }
+button:hover { border-color:var(--muted); }
+button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+:focus-visible { outline:2px solid #1F6F8B; outline-offset:2px; }
+.check { display:inline-flex; align-items:center; gap:6px; font-size:14px; min-height:36px; cursor:pointer; }
+.check input { width:17px; height:17px; accent-color:var(--accent); }
+.skills { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; }
+input[type=number] { font:inherit; padding:6px 8px; width:120px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink); }
+table.t { width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
+table.t th, table.t td { border-bottom:1px solid var(--line); padding:4px 6px; text-align:right; }
+table.t th:first-child, table.t td:first-child { text-align:left; }
+table.t th { color:var(--muted); font-weight:500; }
+#log { font-family:var(--font-mono); font-size:12px; white-space:pre-wrap; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; min-height:120px; max-height:220px; overflow:auto; margin:0; }
+pre#ffText { font-family:var(--font-mono); font-size:12px; white-space:pre-wrap; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin:10px 0 0; max-height:260px; overflow:auto; }
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+  <h1>Beacon Network Simulator <span style="font-weight:400;color:var(--muted)">| v3 groups and coordinator</span></h1>
+  <p class="sub">People explore the area at random. A link is simply 1 (within range) or 0. A coordinator walks in the area but has no links and belongs to no group; she walks to a key location, places a temporary beacon there, and the beacon calls the people with the requested skills, locally or across the whole arena. The request can hop from person to person along links, a chosen number of hops. Each person may decline. When the call ends the group and its leader (most links to people outside the group) are fixed, the beacon disappears, the group works at the site, then it is released. Simulated data only.</p>
+</header>
+<main class="app">
+  <section class="stage card" aria-label="Arena">
+    <canvas id="net" role="img" aria-label="Arena with people, a coordinator, beacons and groups"></canvas>
+    <div class="legend" id="legend"></div>
+    <p class="hint">Fill colour = skill. Dotted ring = asked, green ring = accepted, grey ring = declined; h1, h2... = number of hops the request travelled to reach that person (red lines = relays). Dark ring with LEADER = leader, fixed when the group is formed. A line = linked now (within range). The black square is the coordinator: she walks in the arena and calls people to a place, but has no links and is not part of the connectivity graph.</p>
+  </section>
+
+  <section class="controls card" aria-label="Controls">
+    <h2>Controls</h2>
+    <div class="grid">
+      <div class="field"><label for="n">People <output id="nOut"></output></label><input id="n" type="range" min="10" max="100" step="1" value="40"></div>
+      <div class="field"><label for="k">Skills (A, B, C, ...) <output id="kOut"></output></label><input id="k" type="range" min="2" max="6" step="1" value="3"></div>
+      <div class="field"><label for="r">Person radio range <output id="rOut"></output></label><input id="r" type="range" min="0.10" max="0.50" step="0.01" value="0.25"></div>
+      <div class="field"><label for="br">Beacon call radius <output id="brOut"></output></label><input id="br" type="range" min="0.20" max="2.00" step="0.05" value="0.45"></div>
+      <div class="field"><label for="pa">Chance a person accepts <output id="paOut"></output></label><input id="pa" type="range" min="0" max="1" step="0.05" value="0.8"></div>
+      <div class="field"><label for="ps">Members per requested skill <output id="psOut"></output></label><input id="ps" type="range" min="1" max="6" step="1" value="2"></div>
+      <div class="field"><label for="du">Task duration (s) <output id="duOut"></output></label><input id="du" type="range" min="5" max="60" step="1" value="15"></div>
+      <div class="field"><label for="iv">New request every (s) <output id="ivOut"></output></label><input id="iv" type="range" min="2" max="30" step="1" value="6"></div>
+      <div class="field"><label for="mg">Groups at once (max) <output id="mgOut"></output></label><input id="mg" type="range" min="1" max="4" step="1" value="2"></div>
+      <div class="field"><label for="hp">Relay hops <output id="hpOut"></output></label><input id="hp" type="range" min="0" max="10" step="1" value="2"></div>
+      <div class="field"><label for="sp">Walking speed <output id="spOut"></output></label><input id="sp" type="range" min="0" max="0.3" step="0.01" value="0.08"></div>
+    </div>
+    <div class="row" style="margin-top:12px"><span style="font-size:14px">Skills a manual request asks for:</span><span class="skills" id="skillBoxes"></span></div>
+    <div class="row">
+      <button id="play" class="primary" type="button">Pause</button>
+      <button id="place" type="button">Coordinator: place beacon now</button>
+      <label class="check"><input id="auto" type="checkbox" checked>Automatic requests (random skills)</label>
+    </div>
+    <div class="row">
+      <label class="check" for="seed">Seed <input id="seed" type="number" value="20261120"></label>
+      <button id="reset" type="button">Reset</button>
+      <button id="ff" type="button">Fast-forward 5 min and report</button>
+    </div>
+    <pre id="ffText" aria-live="polite">Fast-forward runs the same model without drawing and reports min / max / mean / std over repeated tasks.</pre>
+  </section>
+
+  <section class="results stack" aria-label="Results">
+    <div class="card">
+      <h2>Layers (coordinator, groups, people)</h2>
+      <canvas id="lay" role="img" aria-label="Layer view"></canvas>
+      <p class="hint">Layer 0: the coordinator (in the space, but not a node of the connectivity graph). Layer 1: each active group collapsed into one node. Layer 2: the people.</p>
+    </div>
+    <div class="card">
+      <h2>Run statistics</h2>
+      <table class="t" id="st"><tbody></tbody></table>
+      <p class="hint">Leader switches are counted while a group works, to show why the leader is fixed: a leader re-chosen every moment by current links would keep changing.</p>
+    </div>
+    <div class="card"><h2>Event log</h2><pre id="log"></pre></div>
+    <div class="card">
+      <h2>Connectivity matrix A (0 or 1)</h2>
+      <canvas id="mat" role="img" aria-label="Weighted connectivity matrix"></canvas>
+      <label class="check"><input id="sortm" type="checkbox" checked>Group members first</label>
+      <p class="hint">Dark = 1 (linked now), white = 0. Members of the same working group are fully connected by definition.</p>
+    </div>
+  </section>
+</main>
+</div>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var SK = ['A', 'B', 'C', 'D', 'E', 'F'];
+  var SKC = ['#1F6F8B', '#D98E04', '#7A5C8E', '#B5446E', '#3F8F4F', '#8A6D3B'];
+  var P = { N: 40, K: 3, R: 0.25, BR: 0.45, pA: 0.8, perSkill: 2, dur: 15, interval: 6, maxG: 2, hops: 2, speed: 0.08, auto: true };
+  var CALL = 3, SLOTSPEED = 0.35, ARENA = 1;
+
+  // ---- seeded random numbers, so every run can be reproduced
+  var seedState = 1;
+  function setSeed(s) { seedState = (s >>> 0) || 1; }
+  function rnd() { seedState |= 0; seedState = seedState + 0x6D2B79F5 | 0; var t = Math.imul(seedState ^ seedState >>> 15, 1 | seedState); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
+
+  var coord = null, people = [], A = new Uint8Array(0), tasks = [], simT = 0, nextReq = 2, nextId = 1, running = true;
+  var logLines = [], S = null;
+  function freshStats() { return { started: 0, done: 0, failed: 0, asked: 0, accepted: 0, sizes: [], swInst: [], sizeTarget: [], hops: [] }; }
+
+  function spawn() { var r = ARENA * 0.96 * Math.sqrt(rnd()), t = rnd() * 2 * Math.PI; return { x: r * Math.cos(t), y: r * Math.sin(t), a: rnd() * 2 * Math.PI, s: 0, st: 'free', task: null, sx: 0, sy: 0, ans: 0, hop: 0 }; }
+  function build() {
+    people = []; for (var i = 0; i < P.N; i++) { var p = spawn(); p.s = Math.floor(rnd() * P.K); people.push(p); }
+    A = new Uint8Array(P.N * P.N); coord = { x: 0.3, y: -0.3, a: rnd() * 6.28, order: null }; tasks = []; simT = 0; nextReq = 2; nextId = 1; logLines = []; S = freshStats();
+  }
+  function log(msg) { logLines.push('t=' + simT.toFixed(0).padStart(3) + 's ' + msg); if (logLines.length > 60) logLines.shift(); }
+
+  function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+  // ---- one simulation step
+  function step(dt) {
+    var N = people.length, i, j, p, q;
+    simT += dt;
+    // current links (0 or 1) from the positions at the start of the step
+    for (i = 0; i < N; i++) for (j = i + 1; j < N; j++) {
+      var inr = Math.hypot(people[i].x - people[j].x, people[i].y - people[j].y) <= P.R ? 1 : 0;
+      A[i * N + j] = inr; A[j * N + i] = inr;
+    }
+    // working groups are fully connected by definition
+    tasks.forEach(function (t) {
+      if (t.phase !== 'working') return;
+      for (var a = 0; a < t.members.length; a++) for (var b = a + 1; b < t.members.length; b++) { var u = t.members[a], v = t.members[b]; A[u * N + v] = 1; A[v * N + u] = 1; }
+    });
+    // movement
+    for (i = 0; i < N; i++) {
+      p = people[i];
+      if (p.st === 'working') { p.x = p.sx; p.y = p.sy; continue; }
+      if (p.st === 'going') {   // called people leave their contacts and walk to the site
+        var dx = p.sx - p.x, dy = p.sy - p.y, d = Math.hypot(dx, dy), m = SLOTSPEED * dt;
+        if (d <= m) { p.x = p.sx; p.y = p.sy; p.st = 'working'; } else { p.x += dx / d * m; p.y += dy / d * m; }
+        continue;
+      }
+      p.a += (rnd() - 0.5) * 14 * dt;
+      p.x += Math.cos(p.a) * P.speed * dt; p.y += Math.sin(p.a) * P.speed * dt;
+      var dd = Math.hypot(p.x, p.y);
+      if (dd > ARENA) {
+        var nx = p.x / dd, ny = p.y / dd; p.x = nx * ARENA; p.y = ny * ARENA;
+        var dot = Math.cos(p.a) * nx + Math.sin(p.a) * ny;
+        if (dot > 0) p.a = Math.atan2(Math.sin(p.a) - 2 * dot * ny, Math.cos(p.a) - 2 * dot * nx);
+      }
+    }
+    // tasks
+    for (var k = tasks.length - 1; k >= 0; k--) {
+      var t = tasks[k];
+      if (t.phase === 'call' && simT >= t.tDecide) decide(t);
+      else if (t.phase === 'working') {
+        trackLeader(t);
+        if (simT >= t.endAt) release(t, k);
+      }
+    }
+    // the coordinator walks in the arena like anyone else, but has no links and is not counted in the graph;
+    // when she has an order she walks to the key location and places the beacon there
+    var c = coord, cs = 0.4 * dt;
+    if (c.order) {
+      var ddx = c.order.x - c.x, ddy = c.order.y - c.y, dc = Math.hypot(ddx, ddy);
+      if (dc <= cs) { c.x = c.order.x; c.y = c.order.y; var od = c.order; c.order = null; newTask(od.skills, od.x, od.y); }
+      else { c.x += ddx / dc * cs; c.y += ddy / dc * cs; }
+    } else {
+      c.a += (rnd() - 0.5) * 14 * dt; c.x += Math.cos(c.a) * P.speed * dt; c.y += Math.sin(c.a) * P.speed * dt;
+      var cd = Math.hypot(c.x, c.y);
+      if (cd > ARENA) { c.x *= ARENA / cd; c.y *= ARENA / cd; c.a += Math.PI; }
+    }
+    if (P.auto && simT >= nextReq && !coord.order && activeCount() < P.maxG) {
+      var sk = []; var pool = []; for (i = 0; i < P.K; i++) pool.push(i);
+      var want = Math.min(2, P.K);
+      while (sk.length < want) sk.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]);
+      sk.sort(); order(sk); nextReq = simT + P.interval;
+    }
+  }
+  function pickSite() {
+    var x = 0, y = 0, ok = false, tries = 0;
+    while (!ok && tries++ < 30) {
+      var r = 0.7 * Math.sqrt(rnd()), th = rnd() * 2 * Math.PI; x = r * Math.cos(th); y = r * Math.sin(th); ok = true;
+      for (var q = 0; q < tasks.length; q++) if (Math.hypot(tasks[q].x - x, tasks[q].y - y) < 0.5) ok = false;
+    }
+    return { x: x, y: y };
+  }
+  function order(skills) { var site = pickSite(); coord.order = { skills: skills, x: site.x, y: site.y }; }
+  function activeCount() { return tasks.length + (coord && coord.order ? 1 : 0); }
+
+  function newTask(skills, x, y) {
+    var t = { id: nextId++, x: x, y: y, skills: skills, phase: 'call', tDecide: simT + CALL, endAt: 0, asked: [], acc: [], dec: [], members: [], leader: -1, swInst: 0, lastInst: -1, target: skills.length * P.perSkill };
+    // the beacon reaches free people inside its radius directly (hop 0); each person who got it passes it on along current links,
+    // up to P.hops further hops (10 = no limit). Only people with a requested skill are asked; others just relay.
+    var Nn = people.length, hop = new Int16Array(Nn).fill(-1), queue = [], maxH = P.hops >= 10 ? 1e9 : P.hops;
+    t.relay = []; t.hop = hop;
+    for (var i = 0; i < Nn; i++) if (people[i].st === 'free' && Math.hypot(people[i].x - x, people[i].y - y) <= P.BR) { hop[i] = 0; queue.push(i); }
+    for (var qh = 0; qh < queue.length; qh++) {
+      var u = queue[qh]; if (hop[u] >= maxH) continue;
+      for (var v = 0; v < Nn; v++) if (A[u * Nn + v] === 1 && hop[v] < 0 && people[v].st === 'free') { hop[v] = hop[u] + 1; queue.push(v); t.relay.push([u, v]); }
+    }
+    for (i = 0; i < Nn; i++) {
+      var p = people[i];
+      if (hop[i] < 0 || skills.indexOf(p.s) < 0) continue;
+      t.asked.push(i); p.st = 'asked'; p.task = t; p.ans = rnd() < P.pA ? 1 : -1;
+      if (p.ans > 0) t.acc.push(i); else t.dec.push(i);
+    }
+    if (P.perSkill >= 6) t.target = Math.max(1, t.asked.length);
+    S.started++; S.asked += t.asked.length; S.accepted += t.acc.length;
+    tasks.push(t);
+    log('Task ' + t.id + ': coordinator places beacon, calls ' + skills.map(function (s) { return SK[s]; }).join('+') + '; ' + t.asked.length + ' asked (' + t.asked.filter(function (i) { return t.hop[i] > 0; }).length + ' via relays), ' + t.acc.length + ' accept');
+  }
+
+  // connectivity towards people OUTSIDE the group: number of links (0/1)
+  function outsideNow(i, memberSet) { var N = people.length, c = 0; for (var j = 0; j < N; j++) if (j !== i && !memberSet[j] && A[i * N + j]) c++; return c; }
+  function bestBy(members, f) { var best = -1, bv = -1e9; members.forEach(function (i) { var v = f(i); if (v > bv + 1e-9 || (Math.abs(v - bv) <= 1e-9 && i < best)) { bv = v; best = i; } }); return best; }
+
+  function decide(t) {
+    var N = people.length, chosen = [], i;
+    // per requested skill: the accepting people closest to the beacon, up to the limit
+    t.skills.forEach(function (s) {
+      var c = t.acc.filter(function (idx) { return people[idx].s === s; });
+      c.sort(function (a, b) { return (t.hop[a] - t.hop[b]) || (Math.hypot(people[a].x - t.x, people[a].y - t.y) - Math.hypot(people[b].x - t.x, people[b].y - t.y)); });
+      chosen = chosen.concat(P.perSkill >= 6 ? c : c.slice(0, P.perSkill));
+    });
+    var covered = t.skills.every(function (s) { return chosen.some(function (idx) { return people[idx].s === s; }); });
+    t.asked.forEach(function (idx) { var p = people[idx]; p.st = 'free'; p.task = null; p.ans = 0; });
+    if (!covered || chosen.length < 2) {
+      S.failed++; log('Task ' + t.id + ' failed: ' + chosen.length + ' accepted, not every requested skill covered; beacon removed');
+      tasks.splice(tasks.indexOf(t), 1); return;
+    }
+    var set = {}; chosen.forEach(function (idx) { set[idx] = true; });
+    t.members = chosen;
+    // leader: the member with the most links (0/1) to people OUTSIDE the group; then locked
+    t.leader = bestBy(chosen, function (idx) { return outsideNow(idx, set); });
+    t.lastInst = t.leader;
+    t.set = set; t.phase = 'working'; t.endAt = simT + P.dur;
+    var m = chosen.length;
+    chosen.forEach(function (idx, a) { var p = people[idx], ang = a * 2.39996, rr = 0.035 * Math.sqrt(a + 1); p.st = 'going'; p.task = t; p.sx = t.x + rr * Math.cos(ang); p.sy = t.y + rr * Math.sin(ang); });
+    t.rad = 0.035 * Math.sqrt(m) + 0.025;
+    log('Task ' + t.id + ': group of ' + m + ' formed, leader ' + t.leader + ' (' + SK[people[t.leader].s] + ') locked, beacon removed');
+  }
+  function trackLeader(t) {
+    if (simT - (t.lastTrack || 0) < 0.25) return;
+    t.lastTrack = simT;
+    var mi = bestBy(t.members, function (idx) { return outsideNow(idx, t.set); });
+    if (mi !== t.lastInst) { t.swInst++; t.lastInst = mi; }
+  }
+  function release(t, k) {
+    t.members.forEach(function (idx) { var p = people[idx]; p.st = 'free'; p.task = null; });
+    S.done++; S.sizes.push(t.members.length); S.sizeTarget.push(t.target); S.swInst.push(t.swInst); t.members.forEach(function (idx) { S.hops.push(t.hop[idx]); });
+    log('Task ' + t.id + ' finished, group released (leader stayed ' + t.leader + '; rule re-run on current links would have switched ' + t.swInst + ' times)');
+    tasks.splice(k, 1);
+  }
+
+  // ---- statistics
+  function ms(a) {
+    if (!a.length) return null;
+    var m = a.reduce(function (x, y) { return x + y; }, 0) / a.length;
+    var v = a.length > 1 ? a.reduce(function (x, y) { return x + (y - m) * (y - m); }, 0) / (a.length - 1) : 0;
+    return { min: Math.min.apply(null, a), max: Math.max.apply(null, a), mean: m, std: Math.sqrt(v) };
+  }
+  function fm(s) { return s ? s.min.toFixed(0) + ' / ' + s.max.toFixed(0) + ' / ' + s.mean.toFixed(2) + ' / ' + s.std.toFixed(2) : 'n/a'; }
+  function report() {
+    var a = S.asked ? (100 * S.accepted / S.asked).toFixed(1) : 'n/a';
+    var fill = S.sizes.length ? (100 * S.sizes.reduce(function (x, y) { return x + y; }, 0) / S.sizeTarget.reduce(function (x, y) { return x + y; }, 0)).toFixed(1) : 'n/a';
+    return { started: S.started, done: S.done, failed: S.failed, success: S.started - tasks.length ? (100 * S.done / (S.done + S.failed || 1)).toFixed(1) : 'n/a', accept: a, fill: fill, size: ms(S.sizes), swI: ms(S.swInst), hops: ms(S.hops) };
+  }
+  function renderStats() {
+    var r = report();
+    $('st').tBodies[0].innerHTML =
+      '<tr><td>Simulated time</td><td colspan="4">' + simT.toFixed(0) + ' s</td></tr>' +
+      '<tr><td>Requests started / done / failed</td><td colspan="4">' + r.started + ' / ' + r.done + ' / ' + r.failed + '</td></tr>' +
+      '<tr><td>Acceptance of those asked</td><td colspan="4">' + r.accept + ' %</td></tr>' +
+      '<tr><td>Members found vs wanted</td><td colspan="4">' + r.fill + ' %</td></tr>' +
+      '<tr><th></th><th colspan="4">min / max / mean / std</th></tr>' +
+      '<tr><td>Group size</td><td colspan="4">' + fm(r.size) + '</td></tr>' +
+      '<tr><td>Hops from the beacon, members</td><td colspan="4">' + fm(r.hops) + '</td></tr>' +
+      '<tr><td>Leader switches per task, re-picked each moment</td><td colspan="4">' + fm(r.swI) + '</td></tr>' +
+      '<tr><td>Leader switches per task, locked (this model)</td><td colspan="4">0 / 0 / 0.00 / 0.00</td></tr>';
+    $('log').textContent = logLines.slice(-10).join('\n');
+  }
+
+  // ---- drawing
+  var net = $('net'), nctx = net.getContext('2d'), mat = $('mat'), mctx = mat.getContext('2d'), lay = $('lay'), lctx = lay.getContext('2d');
+  var C = {};
+  function readColors() { var cs = getComputedStyle(document.documentElement); ['bg','panel','ink','muted','line','accent','link','arena','ok','no'].forEach(function (k) { C[k] = cs.getPropertyValue('--' + k).trim(); }); }
+  readColors(); setInterval(readColors, 3000);
+  function fit(canvas, ctx) {
+    var r = canvas.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return { w: r.width, h: r.height };
+  }
+  function geom(size) { var S0 = Math.min(size.w, size.h) / 2 * 0.76; return { cx: size.w / 2 + size.w * 0.02, cy: size.h / 2 + size.h * 0.04, S: S0, ar: Math.max(3.5, Math.min(10, S0 * 0.05 * Math.sqrt(18 / Math.max(10, people.length)))) }; }
+  function sx(g, x) { return g.cx + x * g.S; } function sy(g, y) { return g.cy + y * g.S; }
+
+  function drawNet() {
+    var size = fit(net, nctx), g = geom(size), ctx = nctx, N = people.length, i, j;
+    ctx.clearRect(0, 0, size.w, size.h);
+    ctx.beginPath(); ctx.arc(g.cx, g.cy, g.S, 0, 2 * Math.PI); ctx.fillStyle = C.panel; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = C.line; ctx.stroke();
+    // (coordinator is drawn after the people)
+    // links: a line wherever two people are within range
+    for (i = 0; i < N; i++) for (j = i + 1; j < N; j++) {
+      if (A[i * N + j] !== 1) continue;
+      var a = people[i], b = people[j], bold = a.task && a.task === b.task && a.task.phase === 'working' && a.task.set[i] && a.task.set[j];
+      ctx.beginPath(); ctx.moveTo(sx(g, a.x), sy(g, a.y)); ctx.lineTo(sx(g, b.x), sy(g, b.y));
+      ctx.strokeStyle = bold ? C.ink : C.link; ctx.globalAlpha = bold ? 0.7 : 0.5; ctx.lineWidth = bold ? 2 : 1; ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    // tasks: beacon in call phase, group disc while working
+    tasks.forEach(function (t) {
+      var x = sx(g, t.x), y = sy(g, t.y);
+      if (t.phase === 'call') {
+        ctx.beginPath(); ctx.arc(x, y, P.BR * g.S, 0, 2 * Math.PI); ctx.globalAlpha = 0.07; ctx.fillStyle = C.accent; ctx.fill(); ctx.globalAlpha = 1;
+        ctx.setLineDash([6, 5]); ctx.lineWidth = 1.4; ctx.strokeStyle = C.accent; ctx.stroke(); ctx.setLineDash([]);
+        t.relay.forEach(function (e) { var a = people[e[0]], b = people[e[1]]; ctx.beginPath(); ctx.moveTo(sx(g, a.x), sy(g, a.y)); ctx.lineTo(sx(g, b.x), sy(g, b.y)); ctx.lineWidth = 1.6; ctx.strokeStyle = C.accent; ctx.globalAlpha = 0.8; ctx.stroke(); ctx.globalAlpha = 1; });
+        star(ctx, x, y, g.ar * 1.9); ctx.fillStyle = C.accent; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = C.panel; ctx.stroke();
+        ctx.fillStyle = C.accent; ctx.font = '600 11px IBM Plex Sans, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+        ctx.fillText('call ' + t.skills.map(function (s) { return SK[s]; }).join('+') + ' (' + Math.max(0, t.tDecide - simT).toFixed(0) + ' s)', x, y - g.ar * 2.4);
+      } else {
+        ctx.beginPath(); ctx.arc(x, y, (t.rad + 0.05) * g.S, 0, 2 * Math.PI); ctx.globalAlpha = 0.1; ctx.fillStyle = C.ink; ctx.fill(); ctx.globalAlpha = 1;
+        ctx.lineWidth = 1.2; ctx.strokeStyle = C.ink; ctx.stroke();
+        ctx.fillStyle = C.ink; ctx.font = '600 11px IBM Plex Sans, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+        ctx.fillText('Task ' + t.id + ' ' + t.skills.map(function (s) { return SK[s]; }).join('+') + ', ' + t.members.length + ' people, ' + Math.max(0, t.endAt - simT).toFixed(0) + ' s', x, y - (t.rad + 0.08) * g.S);
+      }
+    });
+    // people
+    for (i = 0; i < N; i++) {
+      var p = people[i], x2 = sx(g, p.x), y2 = sy(g, p.y), inGroup = p.task && p.task.phase === 'working';
+      ctx.beginPath(); ctx.arc(x2, y2, g.ar, 0, 2 * Math.PI); ctx.fillStyle = SKC[p.s]; ctx.globalAlpha = (p.st === 'free' && !inGroup) ? 0.8 : 1; ctx.fill(); ctx.globalAlpha = 1;
+      ctx.lineWidth = 1.5; ctx.strokeStyle = C.panel; ctx.stroke();
+      if (p.st === 'asked' && p.task && p.task.hop[i] > 0) { ctx.fillStyle = C.accent; ctx.font = '700 10px IBM Plex Sans, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('h' + p.task.hop[i], x2, y2 - g.ar - 6); }
+      if (p.st === 'asked') {
+        ctx.beginPath(); ctx.arc(x2, y2, g.ar + 3, 0, 2 * Math.PI); ctx.lineWidth = 2;
+        if (p.ans > 0) { ctx.strokeStyle = C.ok; } else { ctx.strokeStyle = C.no; ctx.setLineDash([2, 2]); }
+        ctx.stroke(); ctx.setLineDash([]);
+      }
+      if (g.ar >= 7) { ctx.fillStyle = '#fff'; ctx.font = '600 ' + Math.round(g.ar * 0.95) + 'px IBM Plex Sans, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(SK[p.s], x2, y2 + 0.5); }
+      if (inGroup && p.task.leader === i) {
+        ctx.beginPath(); ctx.arc(x2, y2, g.ar + 4, 0, 2 * Math.PI); ctx.lineWidth = 3; ctx.strokeStyle = C.ink; ctx.stroke();
+        ctx.fillStyle = C.ink; ctx.font = '700 10px IBM Plex Sans, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('LEADER', x2, y2 - g.ar - 8);
+      }
+    }
+    // coordinator: walks in the arena, has no links; dotted line to the key location she is heading to
+    var cc = coord, cx0 = sx(g, cc.x), cy0 = sy(g, cc.y);
+    if (cc.order) { var ox = sx(g, cc.order.x), oy = sy(g, cc.order.y); ctx.beginPath(); ctx.moveTo(cx0, cy0); ctx.lineTo(ox, oy); ctx.setLineDash([2, 4]); ctx.lineWidth = 1; ctx.strokeStyle = C.accent; ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(ox, oy, 5, 0, 2 * Math.PI); ctx.lineWidth = 1.5; ctx.strokeStyle = C.accent; ctx.stroke(); }
+    ctx.fillStyle = C.ink; ctx.fillRect(cx0 - 8, cy0 - 8, 16, 16);
+    ctx.fillStyle = C.panel; ctx.font = '700 11px IBM Plex Sans, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('C', cx0, cy0 + 0.5);
+    ctx.fillStyle = C.muted; ctx.font = '500 11px IBM Plex Sans, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillText('Coordinator', cx0 + 11, cy0 - 9);
+  }
+  function star(ctx, x, y, r) { ctx.beginPath(); for (var k = 0; k < 10; k++) { var rad = k % 2 === 0 ? r : r * 0.45, ang = -Math.PI / 2 + k * Math.PI / 5; ctx.lineTo(x + rad * Math.cos(ang), y + rad * Math.sin(ang)); } ctx.closePath(); }
+
+  function drawMat() {
+    var size = fit(mat, mctx), ctx = mctx, Wd = size.w, N = people.length, order = [], i, j;
+    ctx.clearRect(0, 0, Wd, Wd);
+    for (i = 0; i < N; i++) order.push(i);
+    if ($('sortm').checked) {
+      var key = function (idx) { var p = people[idx]; return p.task && p.task.phase === 'working' ? p.task.id : 1e6; };
+      order.sort(function (a, b) { return key(a) - key(b) || a - b; });
+    }
+    var cell = Wd / N; ctx.fillStyle = C.bg; ctx.fillRect(0, 0, Wd, Wd);
+    var ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#16212C';
+    ctx.fillStyle = C.ink;
+    for (i = 0; i < N; i++) for (j = 0; j < N; j++) {
+      if (i === j) continue; var oi = order[i], oj = order[j]; if (A[oi * N + oj] !== 1) continue;
+      ctx.globalAlpha = 1; ctx.fillRect(j * cell, i * cell, Math.max(1, cell - 0.5), Math.max(1, cell - 0.5));
+    }
+    ctx.globalAlpha = 1;
+  }
+  function drawLayers() {
+    var size = fit(lay, lctx), ctx = lctx, w = size.w, h = size.h;
+    ctx.clearRect(0, 0, w, h);
+    var y0 = 24, y1 = h * 0.45, y2 = h - 26;
+    ctx.fillStyle = C.muted; ctx.font = '500 11px IBM Plex Mono, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('L0', 6, y0); ctx.fillText('L1', 6, y1); ctx.fillText('L2', 6, y2);
+    ctx.fillStyle = C.ink; ctx.fillRect(w / 2 - 11, y0 - 11, 22, 22);
+    var nt = tasks.length, free = 0, busy = 0;
+    people.forEach(function (p) { if (p.task && p.task.phase === 'working') busy++; else free++; });
+    tasks.forEach(function (t, k) {
+      var tx = w * (k + 1) / (nt + 1);
+      ctx.beginPath(); ctx.moveTo(w / 2, y0 + 11); ctx.lineTo(tx, y1 - 12); ctx.lineWidth = 1.2; ctx.strokeStyle = C.muted; ctx.stroke();
+      ctx.beginPath(); ctx.arc(tx, y1, 12, 0, 2 * Math.PI); ctx.fillStyle = t.phase === 'working' ? C.ink : C.accent; ctx.fill();
+      ctx.fillStyle = C.muted; ctx.font = '500 11px IBM Plex Sans, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('Task ' + t.id + (t.phase === 'working' ? ' (' + t.members.length + ')' : ' calling'), tx, y1 + 22);
+      if (t.phase === 'working') t.members.forEach(function (idx, a) {
+        var mx = tx + (a - (t.members.length - 1) / 2) * 12;
+        ctx.beginPath(); ctx.moveTo(tx, y1 + 12); ctx.lineTo(mx, y2 - 8); ctx.lineWidth = 0.8; ctx.strokeStyle = C.link; ctx.stroke();
+        ctx.beginPath(); ctx.arc(mx, y2, t.leader === idx ? 7 : 5, 0, 2 * Math.PI); ctx.fillStyle = SKC[people[idx].s]; ctx.fill();
+        if (t.leader === idx) { ctx.lineWidth = 2; ctx.strokeStyle = C.ink; ctx.stroke(); }
+      });
+    });
+    ctx.fillStyle = C.muted; ctx.font = '500 12px IBM Plex Sans, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('Coordinator (no links)', w / 2, y0 + 26);
+    ctx.fillText(free + ' free people (not in any group) and ' + busy + ' working', w / 2, h - 4);
+  }
+
+  function renderAll() { drawNet(); drawMat(); drawLayers(); renderStats(); }
+
+  // ---- controls
+  function legend() {
+    var h = '';
+    for (var k = 0; k < P.K; k++) h += '<span><i class="sw" style="background:' + SKC[k] + '"></i>Skill ' + SK[k] + '</span>';
+    h += '<span><i class="sw" style="border:2px solid var(--ok)"></i>accepted</span><span><i class="sw" style="border:2px dotted var(--no)"></i>declined</span><span><i class="sw" style="border:3px solid var(--ink)"></i>leader</span>';
+    $('legend').innerHTML = h;
+    var b = ''; for (k = 0; k < P.K; k++) b += '<label class="check"><input type="checkbox" data-k="' + k + '"' + (k < 2 ? ' checked' : '') + '>' + SK[k] + '</label>';
+    $('skillBoxes').innerHTML = b;
+  }
+  function bind(id, key, fmt, cb) {
+    var el = $(id), out = $(id + 'Out');
+    function sync() { P[key] = +el.value; out.textContent = fmt(P[key]); if (cb) cb(); }
+    el.addEventListener('input', sync); sync();
+  }
+  bind('n', 'N', function (v) { return v; }, function () { if (people.length !== P.N) { resizePeople(); } });
+  bind('k', 'K', function (v) { return v; }, function () { people.forEach(function (p) { if (p.s >= P.K) p.s = Math.floor(rnd() * P.K); }); legend(); });
+  bind('r', 'R', function (v) { return v.toFixed(2); });
+  bind('br', 'BR', function (v) { return v.toFixed(2) + (v >= 1.9 ? ' (whole arena)' : (v <= 0.5 ? ' (local)' : '')); });
+  bind('pa', 'pA', function (v) { return Math.round(v * 100) + ' %'; });
+  bind('ps', 'perSkill', function (v) { return v >= 6 ? 'no limit' : v; });
+  bind('du', 'dur', function (v) { return v; });
+  bind('iv', 'interval', function (v) { return v; });
+  bind('mg', 'maxG', function (v) { return v; });
+  bind('hp', 'hops', function (v) { return v === 0 ? 'none' : (v >= 10 ? 'no limit' : v); });
+  bind('sp', 'speed', function (v) { return v.toFixed(2); });
+  function resizePeople() {
+    // changing the number of people restarts the run (memory matrix is rebuilt)
+    build(); renderAll();
+  }
+  $('auto').addEventListener('change', function (e) { P.auto = e.target.checked; });
+  $('play').addEventListener('click', function () { running = !running; $('play').textContent = running ? 'Pause' : 'Play'; });
+  $('place').addEventListener('click', function () {
+    var sk = []; document.querySelectorAll('#skillBoxes input').forEach(function (c) { if (c.checked) sk.push(+c.dataset.k); });
+    if (!sk.length) sk = [0];
+    if (activeCount() >= P.maxG) { log('Coordinator: too many active groups, request not placed'); return; }
+    order(sk);
+  });
+  $('reset').addEventListener('click', function () { setSeed(+$('seed').value); build(); renderAll(); });
+  function fastForward(seconds) {
+    var keepRun = running; running = false;
+    setSeed(+$('seed').value); build();
+    var dt = 0.1, n = Math.round(seconds / dt);
+    for (var i = 0; i < n; i++) step(dt);
+    var r = report();
+    var txt = 'Fast-forward ' + seconds + ' s, seed ' + $('seed').value + ', ' + P.N + ' people, ' + P.K + ' skills, R=' + P.R.toFixed(2) + ', beacon radius ' + P.BR.toFixed(2) + ', accept ' + Math.round(P.pA * 100) + ' %, ' + P.perSkill + ' per skill, task ' + P.dur + ' s, every ' + P.interval + ' s, max ' + P.maxG + ' groups, relay hops ' + (P.hops >= 10 ? 'no limit' : P.hops) + ', members per skill ' + (P.perSkill >= 6 ? 'no limit' : P.perSkill) + '\n' +
+      'requests ' + r.started + ' | done ' + r.done + ' | failed ' + r.failed + ' | acceptance ' + r.accept + ' % | members found vs wanted ' + r.fill + ' %\n' +
+      'min / max / mean / std\n' +
+      'group size                         ' + fm(r.size) + '\n' +
+      'hops from beacon, members          ' + fm(r.hops) + '\n' +
+      'leader switches, re-picked each moment ' + fm(r.swI) + '\n' +
+      'leader switches, locked            0 / 0 / 0.00 / 0.00';
+    $('ffText').textContent = txt; running = keepRun; renderAll();
+    return { r: r, txt: txt };
+  }
+  $('ff').addEventListener('click', function () { fastForward(300); });
+  window.__v3 = { fast: function (sec, seed) { $('seed').value = seed; return fastForward(sec); }, P: P, state: function () { return { people: people, tasks: tasks, A: A, simT: simT }; } };
+
+  // ---- main loop
+  var last = performance.now(), acc = 0;
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (running) step(dt);
+    renderAll(); requestAnimationFrame(frame);
+  }
+  legend(); setSeed(+$('seed').value); build();
+  requestAnimationFrame(function (t) { last = t; frame(t); });
+})();
+</script>
+</body>
+</html>

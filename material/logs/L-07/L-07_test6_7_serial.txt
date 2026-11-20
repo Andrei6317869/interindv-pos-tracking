@@ -1,0 +1,6 @@
+Test 6 + 7 on-watch run, 2026-11-13, input mode: touch screen (FT3168 found at 0x38)
+TEST 6 RESULT: 24/24 correct -> PASS
+Test 7: 12/12 runs as expected | profile TX total=4 | blocked by gate=6 | violations=0
+Runs: 01-04 ACCEPT ok, 05-07 REJECT ok, 08-10 TIMEOUT ok, 11-12 FILTERED ok
+OVERALL: PASS
+(Full serial log: see author's capture; per-run lines all [PASS].)
