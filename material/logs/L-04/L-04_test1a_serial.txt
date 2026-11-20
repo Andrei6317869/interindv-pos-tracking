@@ -1,0 +1,33 @@
+===== TEST 1a: watch link check =====
+Chip: ESP32-S3 rev 2 | cores: 2 | CPU: 240 MHz
+Arduino-ESP32 core: 3.3.12 | IDF: v5.5.5
+Flash: 33554432 B
+  heap @ boot           free=288420 of 328324 B | PSRAM free=8386096 of 8388608 B
+[PASS] 1 Wi-Fi STA mode + MAC read MAC=28:84:85:B4:F8:38
+  heap @ after WiFi     free=245980 of 328324 B | PSRAM free=8376120 of 8388608 B
+[PASS] 2 esp_now_init
+[PASS] 3 register send/recv callbacks
+[PASS] 4 add broadcast peer
+  heap @ after ESP-NOW  free=245824 of 328324 B | PSRAM free=8376044 of 8388608 B
+[PASS] 5 ESP-NOW broadcast sent + callback fired (send OK only means transmitted, not received)
+  BLE address: 28:84:85:b4:f8:39
+[PASS] 6 BLE init + service created
+  heap @ after BLE      free=174260 of 328324 B | PSRAM free=8376044 of 8388608 B
+[PASS] 7 BLE advertising started (check with a phone scanner app: look for 'T1a-watch')
+
+Steps 1-7 failures so far: 0
+Starting 30 s soak: ESP-NOW broadcast every 1000 ms + BLE advertising...
+  soak t= 2s  sent=3 txOk=3 txFail=0 rx=0
+  soak t= 7s  sent=8 txOk=8 txFail=0 rx=0
+  soak t=12s  sent=13 txOk=13 txFail=0 rx=0
+  soak t=17s  sent=18 txOk=18 txFail=0 rx=0
+  soak t=22s  sent=23 txOk=23 txFail=0 rx=0
+  soak t=27s  sent=28 txOk=28 txFail=0 rx=0
+[PASS] 8 30 s ESP-NOW + BLE coexistence
+  heap @ end of soak    free=173372 of 328324 B | PSRAM free=8376044 of 8388608 B
+
+===== SUMMARY (paste into logbook) =====
+Messages sent: 31 | tx OK: 31 | tx fail: 0 | received from others: 0
+Step failures: 0
+OVERALL: PASS
+Note: PASS = stacks run on this watch. It does NOT show another device hears it.

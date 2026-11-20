@@ -1,0 +1,7 @@
+Test 10 on-watch run, 2026-11-13 (transcribed from the result screen photo)
+Part A hand cases: 8/8
+seed 1: feasible 440, covered 100.0 %, bad 0, infeasible 560
+seed 2: feasible 418, covered 100.0 %, bad 0, infeasible 582
+seed 3: feasible 444, covered 100.0 %, bad 0, infeasible 556
+size greedy 1.83, minimum 1.82; equal to minimum 99.4 %; worst excess +1
+OVERALL PASS; run time 127 ms
